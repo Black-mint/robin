@@ -87,6 +87,8 @@ For a fully self-contained environment that avoids OS-level dependency conflicts
 
 ## Running Robin via `robin_demo.ipynb`
 
+_In order to run Robin as used in the manuscript, only input the name of a disease, with no other text. If you wish to optimize how Robin searches for experimental models and therapeutic candidates, we suggest changing the internal prompts of Robin (via prompts.py), not the initial input to the pipeline._
+
 1.  **Launch Jupyter Notebook or JupyterLab:**
     Navigate to the `robin` directory in your terminal (ensure your virtual environment is activated) and run:
 
