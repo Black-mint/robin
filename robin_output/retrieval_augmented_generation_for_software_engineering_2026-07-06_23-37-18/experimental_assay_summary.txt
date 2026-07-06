@@ -1,0 +1,8 @@
+Assay Candidate 1:
+Strategy: A Cross-Dependency Regression Benchmark (CDRB) for RAG
+Reasoning: This strategy proposes a systematic stress-testing framework that isolates the impact of library dependency complexity on RAG performance. By programmatically injecting 'dependency drift' (simulated version mismatches) into multi-file repositories, we measure retrieval degradation and hallucination frequency. The novelty lies in the 'validity budget' metric: measuring how much context-injection is required before the synthesis engine violates pre-defined unit test assertions, providing a quantifiable trade-off analysis between context relevance and system reliability in high-entropy software environments.
+
+Assay Candidate 2:
+Strategy: Structural-Semantic Feedback Loop Evaluation (SSFLE)
+Reasoning: This protocol evaluates the effectiveness of hybrid retrieval (semantic + AST-based) by quantifying the 'repair path' efficiency during simulated maintenance tasks. By employing a 'tester-in-the-loop' oracle, the design measures the AST-similarity of retrieved code segments against the eventual fix. It moves beyond static Code-BLEU scores to assess the 'debug latency'—the number of RAG retrieval-generation iterations required to reach a green-build state—thereby capturing the true utility of structural grounding in fixing non-trivial software bugs.
+

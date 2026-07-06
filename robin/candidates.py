@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import re
 from pathlib import Path
 from typing import cast
@@ -10,7 +10,8 @@ from aviary.core import Message
 
 from .configuration import RobinConfiguration
 from .utils import (
-    call_platform,
+    call_llm_single,
+    call_literature_platform,
     extract_candidate_info_from_folder,
     format_candidate_ideas,
     format_final_report,
@@ -36,7 +37,7 @@ async def therapeutic_candidates(  # noqa: PLR0912
     logger.info(
         f"Starting generation of {configuration.num_candidates} therapeutic candidates."
     )
-    logger.info("———————————————————————————————————————————————————————————————")
+    logger.info("------------------------------------------------------------")
 
     # ### Step 1: Generating queries for Crow
 
@@ -82,8 +83,9 @@ async def therapeutic_candidates(  # noqa: PLR0912
         Message(role="user", content=candidate_query_generation_content_message),
     ]
 
-    candidate_query_generation_result = await configuration.llm_client.call_single(
-        candidate_query_generation_messages
+    candidate_query_generation_result = await call_llm_single(
+        configuration.llm_client,
+        candidate_query_generation_messages,
     )
 
     candidate_query_generation_result_text = cast(
@@ -98,13 +100,19 @@ async def therapeutic_candidates(  # noqa: PLR0912
 
     # ### Step 2: Literature review on therapeutic candidates
 
-    logger.info("\nStep 2: Conducting literature search with Edison platform...")
+    logger.info("\nStep 2: Conducting literature search with configured backend...")
 
-    therapeutic_candidate_review = await call_platform(
+    therapeutic_candidate_review = await call_literature_platform(
         queries=candidate_generation_queries_dict,
         fh_client=configuration.edison_client,
         job_name=configuration.agent_settings.candidate_lit_search_agent,
+        llm_client=configuration.llm_client,
     )
+    if not therapeutic_candidate_review["results"]:
+        raise RuntimeError(
+            "No candidate literature results were returned. Check "
+            "ROBIN_LITERATURE_BACKEND, API credits, or rate limits before rerunning."
+        )
 
     if experimental_insights:
         save_crow_files(
@@ -166,7 +174,9 @@ async def therapeutic_candidates(  # noqa: PLR0912
         Message(role="user", content=candidate_generation_user_message),
     ]
 
-    candidate_generation_result = await configuration.llm_client.call_single(messages)
+    candidate_generation_result = await call_llm_single(
+        configuration.llm_client, messages
+    )
 
     llm_raw_output = cast(str, candidate_generation_result.text)
     candidate_ideas_json = []
@@ -304,11 +314,17 @@ async def therapeutic_candidates(  # noqa: PLR0912
         candidate_idea_list=candidate_idea_list
     )
 
-    therapeutic_candidate_hypotheses = await call_platform(
+    therapeutic_candidate_hypotheses = await call_literature_platform(
         queries=therapeutic_candidate_queries,
         fh_client=configuration.edison_client,
         job_name=configuration.agent_settings.candidate_hypothesis_report_agent,
+        llm_client=configuration.llm_client,
     )
+    if not therapeutic_candidate_hypotheses["results"]:
+        raise RuntimeError(
+            "No detailed candidate hypothesis results were returned. Check "
+            "ROBIN_LITERATURE_BACKEND, API credits, or rate limits before rerunning."
+        )
 
     final_therapeutic_candidate_hypotheses = await format_final_report(
         therapeutic_candidate_hypotheses["results"], configuration.llm_client

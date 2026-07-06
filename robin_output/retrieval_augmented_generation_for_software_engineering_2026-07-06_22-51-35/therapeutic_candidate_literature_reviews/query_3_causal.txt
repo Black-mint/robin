@@ -1,0 +1,8 @@
+Query: "Causal inference frameworks for isolating retrieval component impact in RAG pipelines: methodologies for controlled ablation of graph-based versus vector-based context retrieval in source code analysis."
+
+No OpenAlex results were found for this query.
+
+Full trajectory link: https://platform.edisonscientific.com/trajectories/openalex-local
+
+References:
+

@@ -1,0 +1,10 @@
+Query: Here are four research queries designed to ground your work in the state-of-the-art for RAG in software engineering and causal benchmarking:
+
+"Survey of retrieval-augmented generation (RAG) architectures for multi-file software engineering tasks: analyzing current approaches to code dependency graph construction and semantic retrieval for LLM-based code review."
+
+No OpenAlex results were found for this query.
+
+Full trajectory link: https://platform.edisonscientific.com/trajectories/openalex-local
+
+References:
+

@@ -1,0 +1,8 @@
+Query: "Designing adversarial benchmarks for multi-file code dependency resolution: a method for evaluating retrieval fidelity using synthetic mutation-based ground truth datasets."
+
+No OpenAlex results were found for this query.
+
+Full trajectory link: https://platform.edisonscientific.com/trajectories/openalex-local
+
+References:
+

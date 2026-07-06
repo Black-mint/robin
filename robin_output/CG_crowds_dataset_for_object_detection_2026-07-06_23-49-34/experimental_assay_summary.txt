@@ -1,0 +1,20 @@
+Assay Candidate 1:
+Strategy: Synthetic-to-Real Domain Gap Quantifier (SR-DGQ)
+Reasoning: This study designs a controlled validation framework using a 'Domain Randomization Ladder.' By systematically increasing the variance in synthetic lighting, texture, and crowd density, researchers can measure the sensitivity of mAP degradation against specific environmental perturbations, providing a baseline for Sim-to-Real consistency.
+
+Assay Candidate 2:
+Strategy: Occlusion-Stress Benchmarking Protocol (OSBP)
+Reasoning: To address the lack of standardization in crowd occlusion, this protocol introduces a 'synthetic-occlusion injection' layer onto diverse real-world images. By comparing model performance on synthetic vs. real occlusions, researchers can isolate whether a model is failing due to specific object representation errors or general domain-shift artifacts.
+
+Assay Candidate 3:
+Strategy: Multi-Scale Attention Sensitivity Analysis
+Reasoning: This study focuses on evaluating architectural robustness by isolating the impact of multi-scale feature fusion and transformer-based attention modules. The empirical design uses an ablation of these modules on both synthetic crowd testbeds and real-world high-density sequences, quantifying the specific contribution of attention to performance stability.
+
+Assay Candidate 4:
+Strategy: Long-Tail Distribution Stress-Test Suite
+Reasoning: This benchmark suite specifically categorizes objects based on their rarity (long-tail) in training data. It evaluates how synthetic models perform on rare crowd formations (e.g., unusual social clusters) versus the standard 'majority' densities, employing statistical metrics to compare the variance in recall across different cardinality bins.
+
+Assay Candidate 5:
+Strategy: Precision-Latency Efficiency Index (PLEI)
+Reasoning: This protocol defines a unified metric, the PLEI, which balances detection mAP against computational throughput (FPS) in high-density crowds. By testing models under increasing synthetic adversarial noise, the study identifies the 'robustness-efficiency pareto-front,' allowing researchers to optimize models for real-time edge deployment.
+

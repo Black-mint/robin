@@ -1,0 +1,53 @@
+Proposal for Semantic Entropy-Based Hallucination Detection (SEHD) for API Usage
+
+### Research Evaluation Report: Semantic Entropy-Based Hallucination Detection (SEHD) for API Usage
+
+#### Overview of Research Candidate
+The proposed research, **Semantic Entropy-Based Hallucination Detection (SEHD)**, aims to address the critical failure point of hallucinated API calls in RAG-assisted code generation. By leveraging semantic entropy across multiple stochastic decoding paths, the method seeks to quantify model uncertainty when generating API-related code sequences. When a generated API call exhibits high entropy, it acts as a trigger for an agentic "tester" role to initiate re-retrieval or verification against the target repository’s dependency schema.
+
+#### Prior Work and Context
+Current RAG frameworks for software engineering predominantly rely on semantic search to populate context, yet they frequently suffer from "failure points" (Barnett et al., 2024) where LLMs generate plausible but technically incorrect API calls. Existing literature identifies three RAG paradigms (Naive, Advanced, and Modular) (Gao et al., 2023), but current evaluation benchmarks (e.g., Pass@k) struggle to distinguish between superficial code accuracy and deep, repository-specific dependency correctness. This proposal builds upon the concept of "self-collaboration" (Dong et al., 2024), which utilizes specialized roles (analyst, coder, tester) to improve generation quality, and integrates the "semantic entropy" concept (Chen et al., 2024)—originally used for broader hallucination detection—into the domain-specific challenge of software dependency verification.
+
+#### Technical Hypothesis
+The core hypothesis is that non-existent or misaligned API calls produce high variance in token-level probability distributions across multiple stochastic decoding paths because the model lacks sufficient ground-truth grounding for the hallucination. The mechanism relies on the assumption that if a model is "unsure" about an API’s signature or existence within a provided codebase, its sampling behavior will fluctuate significantly compared to generating established, well-documented APIs. This creates a quantifiable signal for an agentic loop (Dong et al., 2024) to identify and mitigate hallucinations in real-time, effectively moving from static evaluation to operational validation (Barnett et al., 2024).
+
+#### Evaluation Plan
+*   **Datasets:** Evaluation should move beyond standard benchmarks and utilize repository-level datasets that enforce strict dependency constraints (e.g., datasets mirroring the complexity of the "self-collaboration" framework (Dong et al., 2024) or the "CRUD-RAG" scenarios (Lyu et al., 2024)).
+*   **Baselines:** Performance should be compared against:
+    1.  Standard RAG without verification.
+    2.  Self-Collaboration frameworks (Dong et al., 2024) without entropy-based triggers.
+    3.  Static analysis-based verification (e.g., linting or compiler feedback).
+*   **Metrics:** Use "Negative Rejection" rates (Chen et al., 2024) specifically focused on API-invocations, latency impact of the stochastic sampling, and F1-score of the "tester" role in correctly identifying true vs. false API hallucinations.
+*   **Reproducibility:** Implementation must ensure the stochastic decoding seed control is transparent. The "tester" role logic must be versioned to ensure it can be benchmarked against static analysis tools.
+
+#### Limitations and Risks
+*   **Computational Overhead:** Stochastic decoding requires multiple forward passes per code chunk, which introduces significant latency—a common challenge in practical RAG deployment (Gao et al., 2023).
+*   **Dependency Schema Inference:** The proposal assumes an accurate "inferred dependency schema" is available. If the RAG retrieval component fails to fetch the relevant dependency documentation, the entropy-based detection may provide false negatives.
+*   **The "Lost-in-the-Middle" Effect:** Large-scale code repositories often exceed context windows. As noted in (Xiong et al., 2024), RAG performance suffers when context is improperly managed, which could cause entropy spikes that are unrelated to hallucinations but rather to context saturation.
+
+#### Overall Evaluation
+**Strengths:** The proposal is highly novel in applying semantic entropy to the granular, structural constraints of API usage. It addresses a recognized gap in software engineering RAG systems—the inability to validate code beyond surface-level syntax.
+**Weaknesses:** The proposal heavily relies on the assumption that semantic entropy correlates with structural API invalidity. It does not explicitly account for the overhead-to-accuracy trade-off.
+**Feasibility:** Highly feasible as an add-on to existing agentic RAG architectures.
+**Impact:** High. If effective, this could drastically reduce the "debugging loop" in RAG-assisted development, providing a move towards the "self-healing" code generation requested in modern software engineering research (Barnett et al., 2024; Dong et al., 2024).
+
+**Recommendation:** Proceed with a focus on benchmarking against static analysis tools to determine if the entropy-based signal provides better coverage than simple compilation or type-checking errors.
+
+### References
+
+Alzubaidi, L., Zhang, J., Humaidi, A. J., Al-Dujaili, A. Q., & Duan, Y. (2021). Review of deep learning: concepts, CNN architectures, challenges, applications, future directions. *Journal of Big Data, 8*(1), 1–74. https://doi.org/10.1186/s40537-021-00444-8
+
+Barnett, S., Kurniawan, S., Thudumu, S., Brannelly, Z., & Abdelrazek, M. (2024). Seven failure points when engineering a retrieval augmented generation system. *Proceedings of the 46th International Conference on Software Engineering: Software Engineering in Practice*, 1–10. https://doi.org/10.1145/3644815.3644945
+
+Chen, J., Lin, H., Han, X., & Sun, L. (2024). Benchmarking large language models in retrieval-augmented generation. *Proceedings of the AAAI Conference on Artificial Intelligence, 38*(16), 17855–17863. https://doi.org/10.1609/aaai.v38i16.29728
+
+Dong, Y., Jiang, X., Jin, Z., & Li, G. (2024). Self-collaboration code generation via ChatGPT. *ACM Transactions on Software Engineering and Methodology, 33*(4), 1–28. https://doi.org/10.1145/3672459
+
+Gao, Y., Xiong, Y., Gao, X., Jia, K., & Pan, J. (2023). Retrieval-augmented generation for large language models: A survey. *arXiv preprint arXiv:2312.10997*. https://doi.org/10.48550/arxiv.2312.10997
+
+Liu, S., Chen, Y., Xie, X., Siow, J. K., & Liu, Y. (2020). Retrieval-augmented generation for code summarization via hybrid GNN. *arXiv preprint arXiv:2006.05405*. https://doi.org/10.48550/arxiv.2006.05405
+
+Lyu, Y., Li, Z., Niu, S., Xiong, F., & Tang, B. (2024). CRUD-RAG: A comprehensive Chinese benchmark for retrieval-augmented generation of large language models. *ACM Transactions on Information Systems, 43*(1), 1–29. https://doi.org/10.1145/3701228
+
+Xiong, G., Jin, Q., Lu, Z., & Zhang, A. (2024). Benchmarking retrieval-augmented generation for medicine. *Findings of the Association for Computational Linguistics: ACL 2024*, 1–15. https://doi.org/10.18653/v1/2024.findings-acl.372
+

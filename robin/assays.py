@@ -1,4 +1,4 @@
-import json
+﻿import json
 import logging
 import re
 from pathlib import Path
@@ -12,7 +12,8 @@ from lmi import LiteLLMModel
 
 from .configuration import RobinConfiguration
 from .utils import (
-    call_platform,
+    call_llm_single,
+    call_literature_platform,
     format_assay_ideas,
     output_to_string,
     processing_ranking_output,
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 async def experimental_assay(configuration: RobinConfiguration) -> str | None:
 
     logger.info("Starting selection of a relevant experimental assay.")
-    logger.info("————————————————————————————————————————————————————")
+    logger.info("------------------------------------------------------------")
 
     # Step 1: Generating queries for Crow
 
@@ -51,8 +52,9 @@ async def experimental_assay(configuration: RobinConfiguration) -> str | None:
         Message(role="user", content=assay_literature_user_message),
     ]
 
-    assay_literature_query_result = await configuration.llm_client.call_single(
-        assay_literature_query_messages
+    assay_literature_query_result = await call_llm_single(
+        configuration.llm_client,
+        assay_literature_query_messages,
     )
 
     assay_literature_query_result_text = cast(str, assay_literature_query_result.text)
@@ -67,15 +69,21 @@ async def experimental_assay(configuration: RobinConfiguration) -> str | None:
 
     # ### Step 2: Literature review on cell culture assays
 
-    logger.info("\nStep 2: Conducting literature search with Edison platform...")
+    logger.info("\nStep 2: Conducting literature search with configured backend...")
 
-    assay_lit_review = await call_platform(
+    assay_lit_review = await call_literature_platform(
         queries=experimental_assay_queries_dict,
         fh_client=configuration.edison_client,
         job_name=configuration.agent_settings.assay_lit_search_agent,
+        llm_client=configuration.llm_client,
     )
 
     assay_lit_review_results = assay_lit_review["results"]
+    if not assay_lit_review_results:
+        raise RuntimeError(
+            "No assay literature results were returned. Check "
+            "ROBIN_LITERATURE_BACKEND, API credits, or rate limits before rerunning."
+        )
 
     save_crow_files(
         assay_lit_review_results,
@@ -108,8 +116,9 @@ async def experimental_assay(configuration: RobinConfiguration) -> str | None:
         Message(role="user", content=assay_proposal_user_message),
     ]
 
-    experimental_assay_ideas = await configuration.llm_client.call_single(
-        assay_proposal_messages
+    experimental_assay_ideas = await call_llm_single(
+        configuration.llm_client,
+        assay_proposal_messages,
     )
 
     response_text = cast(str, experimental_assay_ideas.text)
@@ -181,11 +190,17 @@ async def experimental_assay(configuration: RobinConfiguration) -> str | None:
         assay_idea_list=assay_idea_list
     )
 
-    assay_hypotheses = await call_platform(
+    assay_hypotheses = await call_literature_platform(
         queries=assay_hypothesis_queries,
         fh_client=configuration.edison_client,
         job_name=configuration.agent_settings.assay_hypothesis_report_agent,
+        llm_client=configuration.llm_client,
     )
+    if not assay_hypotheses["results"]:
+        raise RuntimeError(
+            "No detailed assay hypothesis results were returned. Check "
+            "ROBIN_LITERATURE_BACKEND, API credits, or rate limits before rerunning."
+        )
 
     save_crow_files(
         assay_hypotheses["results"],
@@ -265,7 +280,7 @@ async def experimental_assay(configuration: RobinConfiguration) -> str | None:
             Message(role="user", content=synthesize_user_content),
         ]
 
-        response = await client.call_single(messages)
+        response = await call_llm_single(client, messages)
         return cast(str, response.text)
 
     candidate_generation_goal = await synthesize_candidate_goal(

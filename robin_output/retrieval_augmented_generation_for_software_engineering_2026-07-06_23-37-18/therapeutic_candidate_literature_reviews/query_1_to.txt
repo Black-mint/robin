@@ -1,0 +1,48 @@
+Query: To advance the state-of-the-art in graph-aware RAG for multi-repository software engineering, the following queries are designed to bridge the gap between static analysis and generative modeling:
+
+**Query 1 (Survey: Architecture & Graph Representation)**
+"Survey of graph-based retrieval augmented generation for code: integrating Abstract Syntax Trees (ASTs), call graphs, and dependency graphs into LLM context windows for cross-repository software engineering tasks."
+
+### Evaluation Report: Graph-Aware RAG for Multi-Repository Software Engineering
+
+#### 1. Overview of Research Candidate
+The proposed research aims to bridge the gap between static code analysis and generative modeling by integrating structured graph representations—specifically Abstract Syntax Trees (ASTs), call graphs, and dependency graphs—into the context window of Large Language Models (LLMs) for multi-repository software engineering. The core objective is to move beyond text-based retrieval to provide LLMs with the semantic, structural, and relational context required for repository-level tasks.
+
+#### 2. Prior Work and Context
+The candidate’s proposal sits at the intersection of three established research streams:
+*   **RAG Architectures:** Surveys [3] categorize RAG into Naive, Advanced, and Modular paradigms, noting that modern systems rely on synergistic integration of external databases.
+*   **Software Engineering (SE) Agents:** Existing frameworks [5] utilize "self-collaboration" (analyst, coder, tester roles) to handle repository-level complexity, achieving significant performance gains (29–47% improvement in Pass@1).
+*   **Graph-RAG Implementations:** While domain-specific implementations (e.g., *MedGraphRAG* [2]) demonstrate the effectiveness of "triple-linked" structures and multi-stage retrieval (U-Retrieval), software-specific graph integration remains a critical gap compared to medical or general knowledge-base RAG.
+*   **System Reliability:** Contemporary theory [4] suggests that LLM system reliability is a "world-side compilation" problem, emphasizing the use of evidence dependency graphs and validator-driven architectures rather than relying solely on model-weight improvements.
+
+#### 3. Technical Hypothesis
+The candidate’s implied hypothesis is that **repository-level code tasks are hindered by the loss of topological information during standard text-embedding-based retrieval.** By explicitly injecting dependency and call graphs into the RAG pipeline, the system can preserve the "intent" and "structure" of code across repositories, effectively acting as an external cognitive scaffold that compensates for an LLM's limited "native" understanding of complex, multi-repository project architectures.
+
+#### 4. Evaluation Plan
+To move from theory to a rigorous evaluation, the proposal should adopt the following framework based on provided evidence [1, 3, 4]:
+*   **Validation through Operation:** As established in [1], RAG validation is only feasible during operation. Evaluation must occur in live, multi-repository environments rather than purely static benchmarks.
+*   **Metric Diversification:** Move beyond traditional code benchmarks (e.g., HumanEval [7]) to include "evidence dependency graphs" and "artifact I/O manifests" [4] to measure how accurately the graph-based context influences the generation path.
+*   **Counterfactual Analysis:** Implement a baseline comparing text-only RAG against the proposed Graph-RAG to isolate the specific contribution of call-graph/AST injection.
+*   **Robustness Benchmarking:** Incorporate the seven failure points identified in [1] as an explicit stress-test suite for the RAG system.
+
+#### 5. Limitations and Risks
+*   **Architectural Complexity:** As noted in [2], standard GraphRAG implementations are often "overly complex" for general use. The candidate must ensure that graph construction (AST/Call graph extraction) does not introduce latency that negates the real-time advantages of RAG.
+*   **Distribution Shift:** There is a significant risk that the system becomes over-fitted to specific repository structures, failing when encountering non-standard or legacy codebase architectures [4].
+*   **Evaluation Fallibility:** Following [4], human reviewers and LLM-based judges should be treated as "named, fallible measurement channels." The evaluation must avoid circular logic where an LLM is used to grade the output of a system it helped generate.
+
+#### 6. Overall Evaluation
+The research direction is **highly promising and theoretically well-grounded.** The transition toward "world-side compilation" [4] and away from "black-box" LLM prompting represents the current frontier in software engineering AI. 
+
+**Critical Recommendation:** The candidate should focus less on the "scale" of the model and more on the **formal verification of the retrieval path.** Integrating ASTs and call graphs is a high-value strategy; however, the success of the project will depend on the *selection* of the graph traversal algorithm (i.e., how to prune the graph to prevent context-window saturation) rather than the graph construction itself. Integrating the "self-collaboration" principles [5] with graph-aware retrieval could create a state-of-the-art framework for complex repository-level reasoning.
+
+Full trajectory link: https://platform.edisonscientific.com/trajectories/local-falcon-agent
+
+References:
+[1] Seven Failure Points When Engineering a Retrieval Augmented Generation System (Unknown venue, 2024) Authors: Scott Barnett, Stefanus Kurniawan, Srikanth Thudumu, Zach Brannelly, Mohamed Abdelrazek. Citations: 104. DOI: https://doi.org/10.1145/3644815.3644945. URL: https://openalex.org/W4399530612
+[2] Medical Graph RAG: Towards Safe Medical Large Language Model via Graph Retrieval-Augmented Generation (arXiv (Cornell University), 2024) Authors: Junde Wu, Jiayuan Zhu, Qi Yang, Chen, Jingkun, Xu, Min. Citations: 30. DOI: https://doi.org/10.48550/arxiv.2408.04187. URL: https://openalex.org/W4403443396
+[3] Retrieval-Augmented Generation for Large Language Models: A Survey (arXiv (Cornell University), 2023) Authors: Yunfan Gao, Yun Xiong, Xinyu Gao, Kangxiang Jia, Jinliu Pan. Citations: 666. DOI: https://doi.org/10.48550/arxiv.2312.10997. URL: https://openalex.org/W4389984066
+[4] Affordance-Compiled Intelligence: Observable-Only Cognitive Impedance Matching for No-Meta LLM-Integrated Systems (arXiv (Cornell University), 2026) Authors: Patrick Lewis, Ethan Perez, Aleksandara Piktus, Fabio Petroni, Vladimir Karpukhin. Citations: 3012. DOI: https://doi.org/10.5281/zenodo.18717227. URL: https://openalex.org/W3027879771
+[5] Self-Collaboration Code Generation via ChatGPT (ACM Transactions on Software Engineering and Methodology, 2024) Authors: Yihong Dong, Xue Jiang, Zhi Jin, Ge Li. Citations: 189. DOI: https://doi.org/10.1145/3672459. URL: https://openalex.org/W4399557965
+[6] A Survey of Large Language Models (Frontiers of Computer Science, 2026) Authors: Wayne Xin Zhao, Kun Zhou, Junyi Li, Tianyi Tang, Xiaolei Wang. Citations: 1412. DOI: https://doi.org/10.1007/s11704-026-60308-3. URL: https://openalex.org/W4362515116
+[7] CodeT5+: Open Code Large Language Models for Code Understanding and Generation (Unknown venue, 2023) Authors: Yue Wang, Hung Lê, Akhilesh Deepak Gotmare, Nghi Bui, Junnan Li. Citations: 350. DOI: https://doi.org/10.18653/v1/2023.emnlp-main.68. URL: https://openalex.org/W4389519352
+[8] Generative AI for Self-Adaptive Systems: State of the Art and Research Roadmap (ACM Transactions on Autonomous and Adaptive Systems, 2024) Authors: Jialong Li, Mingyue Zhang, Nianyu Li, Danny Weyns, Zhi Jin. Citations: 63. DOI: https://doi.org/10.1145/3686803. URL: https://openalex.org/W4401975604

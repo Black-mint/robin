@@ -1,0 +1,47 @@
+Query: **Query 4 (Targeted: Evaluation & Ablation)**
+"Designing ablation studies for dependency-aware RAG: quantifying the impact of topological graph features versus semantic embeddings on API integration accuracy in large-scale multi-repository codebases."
+
+### Candidate Evaluation Report: Dependency-Aware RAG Ablation
+
+#### 1. Overview of Research Candidate
+The proposed research aims to quantify the relative contributions of **topological graph features** versus **semantic embeddings** in the context of dependency-aware Retrieval-Augmented Generation (RAG) for large-scale multi-repository codebases. The core objective is to identify which data modality—relational graph structure or vector-based semantic similarity—most effectively drives accuracy in API integration tasks.
+
+#### 2. Prior Work and Context
+Current research establishes that while standard RAG systems (based on linear retrieval) suffer from semantic fragmentation, **GraphRAG** offers a mechanism to preserve relational integrity [2, 5]. Existing studies on Generative Graph Analytics (LLM-GGA) highlight the fundamental tension between the sequential nature of LLMs and the non-sequential, topological nature of graphs [1]. While frameworks like **Modular RAG** [4] provide the architectural flexibility to swap or isolate these components, and methodologies exist for evaluating RAG in configuration dependency tasks [3], there remains a gap in systematically isolating the performance gains attributed specifically to the "graph" component versus the "semantic" component in code-heavy environments.
+
+#### 3. Technical Hypothesis
+The study implicitly operates under the hypothesis that **topological features** (representing call graphs, dependency trees, and API usage paths) provide superior grounding for API integration than **semantic embeddings** alone. This aligns with the understanding that code-base accuracy depends on logical structure (dependencies) rather than linguistic similarity, which is often misleading in polymorphic code environments. The research seeks to validate this by using a controlled ablation study to observe whether the removal of graph-based topological context degrades API integration accuracy more significantly than the removal of vector-based semantic retrieval.
+
+#### 4. Evaluation Plan
+To execute a sound ablation, the following components should be utilized:
+*   **Modular Decomposition:** Leverage the *Modular RAG* framework [4] to create a "LEGO-like" environment where the graph-retrieval module can be toggled on/off while holding the semantic retriever constant.
+*   **Methodological Rigor:** Apply the evaluation blueprint proposed by Simon et al. [3], specifically the practice of qualitative failure analysis to categorize why specific API integrations fail—whether due to missing semantic context (e.g., library documentation) or missing topological context (e.g., transitive dependencies).
+*   **Metric Selection:** Move beyond standard RAG metrics to include *topology density* and *entity-recognition coverage* [2], alongside accuracy metrics specifically focused on dependency validation.
+*   **Robustness Checking:** Following the lessons from *ConvE* [7], ensure that evaluation datasets for dependency validation are checked for "test set leakage" (e.g., trivial dependency patterns that models might "memorize" rather than "reason through").
+
+#### 5. Limitations and Risks
+*   **The Sequential-Topological Gap:** As noted by Shang and Huang [1], LLMs are inherently sequential; forcing them to reason over topological data may incur a cognitive load that obscures the true value of the graph features, leading to false-negative results in the ablation.
+*   **Resource Constraints:** As highlighted in [8], moving toward GraphRAG introduces significant resource-related bottlenecks in real-time or large-scale settings. The overhead of graph traversal and embedding synchronization may make the "graph-aware" version slower, potentially confounding "accuracy" with "system responsiveness."
+*   **Systemic Brittleness:** The research must account for the "semantic gap" inherent in graph construction [2]. If the graph construction pipeline is suboptimal, the ablation will measure the failure of the graph-building method rather than the value of the topological information itself.
+
+#### 6. Overall Evaluation
+The proposed research is **highly relevant and timely**. The shift from "standard RAG" to "GraphRAG" is a critical bottleneck in engineering-focused LLM applications. However, the success of this candidate will depend heavily on the **purity of the ablation**. 
+
+**Strengths:** 
+*   Addresses a clear, measurable problem (API integration accuracy).
+*   Aligns with the industry trend of modularized RAG architectures.
+*   Strong theoretical foundation provided by recent surveys on LLM-based graph analytics [1, 5].
+
+**Recommendation:** The researcher should focus heavily on the "Modular RAG" paradigm to ensure that the ablation is clean. A major risk is that if the graph embedding/retrieval isn't optimized similarly to the semantic embedding, the study will merely prove that "a well-tuned system works better than a poorly-tuned one." The study must ensure that both pathways are equally optimized before ablation to yield a scientifically valid comparison.
+
+Full trajectory link: https://platform.edisonscientific.com/trajectories/local-falcon-agent
+
+References:
+[1] A Survey of Large Language Models on Generative Graph Analytics: Query, Learning, and Applications (arXiv (Cornell University), 2024) Authors: Wenbo Shang, Xin Huang. Citations: 2. DOI: https://doi.org/10.48550/arxiv.2404.14809. URL: https://openalex.org/W4395443419
+[2] SC-LKM: A Semantic Chunking and Large Language Model-Based Cybersecurity Knowledge Graph Construction Method (Electronics, 2025) Authors: Pu Wang, Yangsen Zhang, Zicheng Zhou, Yuqi Wang. Citations: 5. DOI: https://doi.org/10.3390/electronics14142878. URL: https://openalex.org/W4412873150
+[3] A Methodology for Evaluating RAG Systems: A Case Study On Configuration Dependency Validation (arXiv (Cornell University), 2024) Authors: Sebastian Simon, Alina Mailach, Johannes Dorn, Norbert Siegmund. Citations: 3. DOI: https://doi.org/10.48550/arxiv.2410.08801. URL: https://openalex.org/W4403443637
+[4] Modular RAG: Transforming RAG Systems into LEGO-like Reconfigurable Frameworks (arXiv (Cornell University), 2024) Authors: Yunfan Gao, Yun Xiong, Meng Wang, Haofen Wang. Citations: 10. DOI: https://doi.org/10.48550/arxiv.2407.21059. URL: https://openalex.org/W4401306278
+[5] Retrieval-Augmented Generation with Graphs (GraphRAG) (arXiv (Cornell University), 2024) Authors: Haoyu Han, Yu Wang, Harry Shomer, Kai Guo, Jiayuan Ding. Citations: 20. DOI: https://doi.org/10.48550/arxiv.2501.00309. URL: https://openalex.org/W4406031095
+[6] AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges (SuperIntelligence - Robotics - Safety & Alignment, 2025) Authors: Ranjan Sapkota, Konstantinos I. Roumeliotis, Manoj Karkee. Citations: 129. DOI: https://doi.org/10.70777/si.v2i3.15161. URL: https://openalex.org/W4412505619
+[7] Convolutional 2D Knowledge Graph Embeddings (Proceedings of the AAAI Conference on Artificial Intelligence, 2018) Authors: Tim Dettmers, Pasquale Minervini, Pontus Stenetorp, Sebastian Riedel. Citations: 2417. DOI: https://doi.org/10.1609/aaai.v32i1.11573. URL: https://openalex.org/W2728059831
+[8] The bottlenecks of AI: challenges for embedded and real-time research in a data-centric age (Real-Time Systems, 2025) Authors: Tarek Abdelzaher, Y. Charlie Hu, Denizhan Kara, Tomoyoshi Kimura, Ashitabh Misra. Citations: 10. DOI: https://doi.org/10.1007/s11241-025-09452-w. URL: https://openalex.org/W4412056540

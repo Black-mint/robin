@@ -1,16 +1,19 @@
-import ast
+﻿import ast
 import asyncio
 import csv
 import io
 import itertools
 import json
 import logging
+import os
 import random
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, cast
 
 import aiofiles
+import httpx
 import pandas as pd
 from aviary.core import Message
 from edison_client import EdisonClient, JobNames, TaskResponse
@@ -27,6 +30,36 @@ logger = logging.getLogger(__name__)
 POLLING_INTERVAL = 5  # seconds
 OVERALL_TIMEOUT = 6000  # seconds
 
+_LLM_QUOTA_ERROR_HINTS = (
+    "insufficient_quota",
+    "exceeded your current quota",
+    "rate limit",
+    "ratelimiterror",
+)
+
+
+def _is_llm_quota_error(error: Exception) -> bool:
+    current: BaseException | None = error
+    while current is not None:
+        error_text = str(current).lower()
+        if any(hint in error_text for hint in _LLM_QUOTA_ERROR_HINTS):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
+async def call_llm_single(client: LiteLLMModel, messages: list[Message]) -> Any:
+    try:
+        return await client.call_single(messages)
+    except Exception as err:
+        if _is_llm_quota_error(err):
+            raise RuntimeError(
+                "LLM request failed because the configured provider rejected the "
+                "request for quota or rate-limit reasons. Check OPENAI_API_KEY "
+                "billing/quota, or set ROBIN_LLM_MODEL/OPENAI_MODEL and the "
+                "matching provider credentials to a model your account can use."
+            ) from err
+        raise
 
 async def poll_for_task_completion(
     task_id: str, fh_client: EdisonClient
@@ -67,6 +100,653 @@ async def gather_results(
     return await asyncio.gather(*tasks)
 
 
+def _pubmed_text(element: ET.Element | None) -> str:
+    if element is None:
+        return ""
+    return " ".join("".join(element.itertext()).split())
+
+
+async def call_pubmed_platform(
+    queries: dict[str, str], max_results: int = 5
+) -> dict[str, Any]:
+    logger.info(f"Starting PubMed literature search for {len(queries)} queries.")
+    all_results: list[dict[str, Any]] = []
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        for hypothesis, query in queries.items():
+            search_response = await client.get(
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+                params={
+                    "db": "pubmed",
+                    "term": query,
+                    "retmode": "json",
+                    "retmax": max_results,
+                    "sort": "relevance",
+                    "tool": "robin",
+                },
+            )
+            search_response.raise_for_status()
+            ids = search_response.json().get("esearchresult", {}).get("idlist", [])
+
+            if not ids:
+                all_results.append(
+                    {
+                        "hypothesis": hypothesis,
+                        "query": query,
+                        "answer": "No PubMed results were found for this query.",
+                        "sources": "",
+                        "context": f"Query: {query}\nAnswer: No PubMed results found.",
+                        "status": "success",
+                        "task_run_id": "pubmed-local",
+                    }
+                )
+                continue
+
+            fetch_response = await client.get(
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+                params={
+                    "db": "pubmed",
+                    "id": ",".join(ids),
+                    "retmode": "xml",
+                    "tool": "robin",
+                },
+            )
+            fetch_response.raise_for_status()
+            root = ET.fromstring(fetch_response.text)
+
+            paper_summaries: list[str] = []
+            sources: list[str] = []
+            for article in root.findall(".//PubmedArticle"):
+                pmid = _pubmed_text(article.find(".//PMID"))
+                title = _pubmed_text(article.find(".//ArticleTitle"))
+                abstract_parts = [
+                    _pubmed_text(part)
+                    for part in article.findall(".//Abstract/AbstractText")
+                ]
+                abstract = " ".join(part for part in abstract_parts if part)
+                journal = _pubmed_text(article.find(".//Journal/Title"))
+                year = _pubmed_text(article.find(".//PubDate/Year"))
+                citation = f"PMID {pmid}: {title}"
+                if journal or year:
+                    citation += f" ({journal}, {year})"
+                if abstract:
+                    paper_summaries.append(f"{citation}\nAbstract: {abstract}")
+                else:
+                    paper_summaries.append(f"{citation}\nAbstract: Not available.")
+                sources.append(
+                    citation + f" URL: https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                )
+
+            answer = (
+                "PubMed literature summary based on titles and abstracts.\n\n"
+                + "\n\n".join(paper_summaries)
+            )
+            all_results.append(
+                {
+                    "hypothesis": hypothesis,
+                    "query": query,
+                    "answer": answer,
+                    "sources": "\n".join(sources),
+                    "context": f"Query: {query}\nAnswer: {answer}",
+                    "status": "success",
+                    "task_run_id": "pubmed-local",
+                }
+            )
+
+    return {"results": all_results, "count": len(all_results), "has_errors": False}
+
+
+async def call_semantic_scholar_platform(
+    queries: dict[str, str], max_results: int = 5
+) -> dict[str, Any]:
+    logger.info(
+        f"Starting Semantic Scholar literature search for {len(queries)} queries."
+    )
+    all_results: list[dict[str, Any]] = []
+    headers = {}
+    api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
+    if api_key:
+        headers["x-api-key"] = api_key
+
+    async with httpx.AsyncClient(timeout=60, headers=headers) as client:
+        for hypothesis, query in queries.items():
+            response = await client.get(
+                "https://api.semanticscholar.org/graph/v1/paper/search",
+                params={
+                    "query": query,
+                    "limit": max_results,
+                    "fields": "title,abstract,year,venue,authors,url,citationCount,externalIds",
+                },
+            )
+            response.raise_for_status()
+            papers = response.json().get("data", [])
+
+            if not papers:
+                all_results.append(
+                    {
+                        "hypothesis": hypothesis,
+                        "query": query,
+                        "answer": "No Semantic Scholar results were found for this query.",
+                        "sources": "",
+                        "context": (
+                            f"Query: {query}\n"
+                            "Answer: No Semantic Scholar results found."
+                        ),
+                        "status": "success",
+                        "task_run_id": "semantic-scholar-local",
+                    }
+                )
+                continue
+
+            paper_summaries: list[str] = []
+            sources: list[str] = []
+            for paper in papers:
+                title = paper.get("title") or "Untitled"
+                abstract = paper.get("abstract") or "Abstract not available."
+                year = paper.get("year") or "n.d."
+                venue = paper.get("venue") or "Unknown venue"
+                url = paper.get("url") or ""
+                citation_count = paper.get("citationCount")
+                authors = ", ".join(
+                    author.get("name", "Unknown author")
+                    for author in paper.get("authors", [])[:5]
+                )
+                external_ids = paper.get("externalIds") or {}
+                doi = external_ids.get("DOI")
+                citation = f"{title} ({venue}, {year})"
+                if authors:
+                    citation += f" Authors: {authors}."
+                if citation_count is not None:
+                    citation += f" Citations: {citation_count}."
+                if doi:
+                    citation += f" DOI: {doi}."
+
+                paper_summaries.append(f"{citation}\nAbstract: {abstract}")
+                source_line = citation
+                if url:
+                    source_line += f" URL: {url}"
+                sources.append(source_line)
+
+            answer = (
+                "Semantic Scholar literature summary based on paper metadata and abstracts.\n\n"
+                + "\n\n".join(paper_summaries)
+            )
+            all_results.append(
+                {
+                    "hypothesis": hypothesis,
+                    "query": query,
+                    "answer": answer,
+                    "sources": "\n".join(sources),
+                    "context": f"Query: {query}\nAnswer: {answer}",
+                    "status": "success",
+                    "task_run_id": "semantic-scholar-local",
+                }
+            )
+
+    return {"results": all_results, "count": len(all_results), "has_errors": False}
+
+
+def _openalex_abstract(work: dict[str, Any]) -> str:
+    inverted_index = work.get("abstract_inverted_index") or {}
+    if not inverted_index:
+        return "Abstract not available."
+    positions: list[tuple[int, str]] = []
+    for word, indexes in inverted_index.items():
+        positions.extend((int(index), word) for index in indexes)
+    return " ".join(word for _, word in sorted(positions))
+
+
+def _openalex_search_query(query: str) -> str:
+    # OpenAlexでは?や*がワイルドカードとして扱われるため、自然文検索では除去する。
+    cleaned = re.sub(r"[?*]", " ", query)
+    cleaned = re.sub(r"^\s*\d+\.\s*", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned[:500]
+
+
+async def call_openalex_platform(
+    queries: dict[str, str], max_results: int = 5
+) -> dict[str, Any]:
+    logger.info(f"Starting OpenAlex literature search for {len(queries)} queries.")
+    all_results: list[dict[str, Any]] = []
+    api_key = os.getenv("OPENALEX_API_KEY")
+    headers = {"User-Agent": "robin-research-workflow/0.1 (mailto:anonymous@example.com)"}
+
+    async with httpx.AsyncClient(timeout=60, headers=headers) as client:
+        for hypothesis, query in queries.items():
+            params = {
+                "search": _openalex_search_query(query),
+                "per-page": max_results,
+                "sort": "cited_by_count:desc",
+            }
+            if api_key:
+                params["api_key"] = api_key
+
+            response = await client.get("https://api.openalex.org/works", params=params)
+
+            if response.status_code in {401, 403} and api_key:
+                logger.warning(
+                    "OpenAlex rejected OPENALEX_API_KEY. Retrying anonymously. "
+                    "Response: %s",
+                    response.text[:500],
+                )
+                params.pop("api_key", None)
+                response = await client.get("https://api.openalex.org/works", params=params)
+
+            if response.status_code == 400:
+                logger.warning(
+                    "OpenAlex rejected the full query. Retrying with a shorter query. "
+                    "Response: %s",
+                    response.text[:500],
+                )
+                params["search"] = params["search"][:250]
+                response = await client.get("https://api.openalex.org/works", params=params)
+
+            if response.status_code == 429:
+                retry_after = response.json().get("retryAfter", 30)
+                try:
+                    wait_seconds = min(int(retry_after), 60)
+                except (TypeError, ValueError):
+                    wait_seconds = 30
+                logger.warning(
+                    "OpenAlex rate limit reached. Waiting %s seconds before one retry.",
+                    wait_seconds,
+                )
+                await asyncio.sleep(wait_seconds)
+                response = await client.get("https://api.openalex.org/works", params=params)
+
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as err:
+                raise RuntimeError(
+                    "OpenAlex literature search failed. The response was: "
+                    f"{response.text[:500]}"
+                ) from err
+
+            works = response.json().get("results", [])
+
+            if not works:
+                all_results.append(
+                    {
+                        "hypothesis": hypothesis,
+                        "query": query,
+                        "answer": "No OpenAlex results were found for this query.",
+                        "sources": "",
+                        "context": f"Query: {query}\nAnswer: No OpenAlex results found.",
+                        "status": "success",
+                        "task_run_id": "openalex-local",
+                    }
+                )
+                continue
+
+            work_summaries: list[str] = []
+            sources: list[str] = []
+            for work in works:
+                title = work.get("display_name") or "Untitled"
+                year = work.get("publication_year") or "n.d."
+                doi = work.get("doi") or ""
+                openalex_url = work.get("id") or ""
+                primary_location = work.get("primary_location") or {}
+                source = primary_location.get("source") or {}
+                venue = source.get("display_name") or "Unknown venue"
+                citation_count = work.get("cited_by_count")
+                authors = ", ".join(
+                    authorship.get("author", {}).get("display_name", "Unknown author")
+                    for authorship in work.get("authorships", [])[:5]
+                )
+                abstract = _openalex_abstract(work)
+                citation = f"{title} ({venue}, {year})"
+                if authors:
+                    citation += f" Authors: {authors}."
+                if citation_count is not None:
+                    citation += f" Citations: {citation_count}."
+                if doi:
+                    citation += f" DOI: {doi}."
+                work_summaries.append(f"{citation}\nAbstract: {abstract}")
+                source_line = citation
+                if openalex_url:
+                    source_line += f" URL: {openalex_url}"
+                sources.append(source_line)
+
+            answer = (
+                "OpenAlex literature summary based on work metadata and abstracts.\n\n"
+                + "\n\n".join(work_summaries)
+            )
+            all_results.append(
+                {
+                    "hypothesis": hypothesis,
+                    "query": query,
+                    "answer": answer,
+                    "sources": "\n".join(sources),
+                    "context": f"Query: {query}\nAnswer: {answer}",
+                    "status": "success",
+                    "task_run_id": "openalex-local",
+                }
+            )
+
+    return {"results": all_results, "count": len(all_results), "has_errors": False}
+
+
+def _local_agent_mode(job_name: JobNames) -> str:
+    if job_name == JobNames.FALCON:
+        return "falcon"
+    job_text = str(job_name).upper()
+    if "FALCON" in job_text or "PAPERQA3" in job_text:
+        return "falcon"
+    return "crow"
+
+
+def _local_agent_terms(query: str) -> list[str]:
+    stopwords = {
+        "about", "above", "across", "after", "against", "also", "among",
+        "and", "are", "based", "been", "between", "both", "can", "could",
+        "does", "each", "from", "have", "into", "like", "more", "most",
+        "that", "the", "their", "these", "this", "those", "through", "using",
+        "what", "when", "where", "which", "while", "with", "without", "would",
+    }
+    terms: list[str] = []
+    for term in re.findall(r"[A-Za-z][A-Za-z0-9_-]{2,}", query.lower()):
+        normalized = term.replace("-", " ")
+        if normalized not in stopwords and normalized not in terms:
+            terms.append(normalized)
+    return terms
+
+
+def _local_agent_search_queries(query: str, max_queries: int = 6) -> list[str]:
+    terms = _local_agent_terms(query)
+    queries: list[str] = []
+
+    # 長い自然文を検索API向けの短いキーワード列に変換する。
+    has_rag = "retrieval" in terms and ("generation" in terms or "augmented" in terms)
+    if has_rag:
+        queries.append("retrieval augmented generation software engineering")
+        queries.append("RAG code generation benchmark")
+        queries.append("retrieval augmented generation code generation")
+    if terms:
+        specific_terms = [
+            term for term in terms
+            if term not in {"software", "engineering", "benchmark", "evaluation"}
+        ]
+        queries.append(" ".join(specific_terms[:8] or terms[:8]))
+    if "code" in terms or "software" in terms:
+        queries.append("LLM code generation benchmark")
+    if "graph" in terms or "dependency" in terms:
+        queries.append("code dependency graph retrieval")
+    if "hallucination" in terms or "truthfulness" in terms:
+        queries.append("LLM code generation hallucination evaluation")
+    if "benchmark" in terms or "evaluation" in terms:
+        queries.append("software engineering benchmark evaluation metrics")
+
+    fallback = _openalex_search_query(query)
+    if fallback:
+        queries.append(fallback[:180])
+
+    deduped: list[str] = []
+    for search_query in queries:
+        cleaned = re.sub(r"\s+", " ", search_query).strip()
+        if cleaned and cleaned not in deduped:
+            deduped.append(cleaned)
+    return deduped[:max_queries]
+
+
+def _openalex_work_key(work: dict[str, Any]) -> str:
+    return str(work.get("doi") or work.get("id") or work.get("display_name") or "")
+
+
+def _score_openalex_work(work: dict[str, Any], terms: list[str]) -> float:
+    title = str(work.get("display_name") or "")
+    abstract = _openalex_abstract(work)
+    haystack = f"{title} {abstract}".lower()
+    generic_terms = {"software", "engineering", "benchmark", "evaluation"}
+    specific_terms = [term for term in terms if term not in generic_terms]
+    lexical_score = 10.0 * sum(1 for term in specific_terms if term in haystack)
+    phrase_score = 0.0
+    for phrase in (
+        "retrieval augmented generation",
+        "large language model",
+        "code generation",
+        "software engineering",
+        "code search",
+    ):
+        if phrase in haystack:
+            phrase_score += 15.0
+    citation_score = min(float(work.get("cited_by_count") or 0), 500.0) / 500.0
+    year = work.get("publication_year") or 0
+    recency_score = max(0.0, (float(year) - 2018.0) / 5.0) if year else 0.0
+    return lexical_score + phrase_score + citation_score + recency_score
+
+
+def _openalex_work_is_relevant(work: dict[str, Any], terms: list[str]) -> bool:
+    title = str(work.get("display_name") or "")
+    abstract = _openalex_abstract(work)
+    haystack = f"{title} {abstract}".lower()
+    generic_terms = {"software", "engineering", "benchmark", "evaluation"}
+    specific_terms = [term for term in terms if term not in generic_terms]
+    if any(phrase in haystack for phrase in ("retrieval augmented generation", "code generation", "large language model")):
+        return True
+    return sum(1 for term in specific_terms if term in haystack) >= 2
+
+
+async def _fetch_openalex_works(
+    client: httpx.AsyncClient, search_query: str, max_results: int
+) -> list[dict[str, Any]]:
+    params: dict[str, Any] = {
+        "search": _openalex_search_query(search_query),
+        "per-page": max_results,
+    }
+    api_key = os.getenv("OPENALEX_API_KEY")
+    if api_key:
+        params["api_key"] = api_key
+
+    response = await client.get("https://api.openalex.org/works", params=params)
+    if response.status_code in {401, 403} and api_key:
+        params.pop("api_key", None)
+        response = await client.get("https://api.openalex.org/works", params=params)
+    if response.status_code == 400:
+        params["search"] = str(params["search"])[:250]
+        response = await client.get("https://api.openalex.org/works", params=params)
+    if response.status_code == 429:
+        retry_after = response.json().get("retryAfter", 30)
+        try:
+            wait_seconds = min(int(retry_after), 60)
+        except (TypeError, ValueError):
+            wait_seconds = 30
+        logger.warning(
+            "OpenAlex rate limit reached. Waiting %s seconds before one retry.",
+            wait_seconds,
+        )
+        await asyncio.sleep(wait_seconds)
+        response = await client.get("https://api.openalex.org/works", params=params)
+
+    response.raise_for_status()
+    return list(response.json().get("results", []))
+
+
+def _format_openalex_evidence(works: list[dict[str, Any]]) -> tuple[str, str]:
+    summaries: list[str] = []
+    sources: list[str] = []
+    for index, work in enumerate(works, start=1):
+        title = work.get("display_name") or "Untitled"
+        year = work.get("publication_year") or "n.d."
+        doi = work.get("doi") or ""
+        openalex_url = work.get("id") or ""
+        primary_location = work.get("primary_location") or {}
+        source = primary_location.get("source") or {}
+        venue = source.get("display_name") or "Unknown venue"
+        citation_count = work.get("cited_by_count")
+        authors = ", ".join(
+            authorship.get("author", {}).get("display_name", "Unknown author")
+            for authorship in work.get("authorships", [])[:5]
+        )
+        abstract = _openalex_abstract(work)
+        citation = f"[{index}] {title} ({venue}, {year})"
+        if authors:
+            citation += f" Authors: {authors}."
+        if citation_count is not None:
+            citation += f" Citations: {citation_count}."
+        if doi:
+            citation += f" DOI: {doi}."
+        summaries.append(f"{citation}\nAbstract: {abstract}")
+        source_line = citation
+        if openalex_url:
+            source_line += f" URL: {openalex_url}"
+        sources.append(source_line)
+    return "\n\n".join(summaries), "\n".join(sources)
+
+
+def _local_agent_fallback_answer(
+    query: str, mode: str, evidence_text: str, sources_text: str
+) -> str:
+    label = "Falcon-like deep literature report" if mode == "falcon" else "Crow-like concise literature review"
+    if not evidence_text:
+        return f"{label}\n\nNo OpenAlex results were found for this query."
+    if mode == "falcon":
+        return (
+            f"{label}\n\n"
+            "Overview:\nThis report evaluates the candidate using retrieved scholarly metadata and abstracts.\n\n"
+            "Prior work and context:\n"
+            f"{evidence_text}\n\n"
+            "Evaluation guidance:\nUse the retrieved studies to assess novelty, technical feasibility, datasets, metrics, baselines, reproducibility, and risks."
+        )
+    return (
+        f"{label}\n\n"
+        f"Research question:\n{query}\n\n"
+        "Relevant literature:\n"
+        f"{evidence_text}\n\n"
+        "Implications for Robin:\nUse these papers to propose concrete study designs, benchmarks, metrics, baselines, and open research gaps."
+    )
+
+
+async def _local_agent_summarize(
+    query: str,
+    mode: str,
+    evidence_text: str,
+    sources_text: str,
+    llm_client: LiteLLMModel | None,
+) -> str:
+    if llm_client is None or not evidence_text:
+        return _local_agent_fallback_answer(query, mode, evidence_text, sources_text)
+
+    if mode == "falcon":
+        system_prompt = (
+            "You are a Falcon-like literature review agent for information engineering. "
+            "Write a deep, critical candidate evaluation report grounded only in the provided evidence."
+        )
+        user_prompt = (
+            f"Candidate or research question:\n{query}\n\n"
+            f"Retrieved evidence:\n{evidence_text}\n\n"
+            "Write a structured report with these sections: Overview of Research Candidate, "
+            "Prior Work and Context, Technical Hypothesis, Evaluation Plan, Limitations and Risks, Overall Evaluation."
+        )
+    else:
+        system_prompt = (
+            "You are a Crow-like literature review agent. Write a concise, useful literature "
+            "review for the next step of a research ideation workflow."
+        )
+        user_prompt = (
+            f"Research question:\n{query}\n\n"
+            f"Retrieved evidence:\n{evidence_text}\n\n"
+            "Write a concise report with these sections: Key Findings, Relevant Methods, "
+            "Datasets or Benchmarks, Evaluation Metrics, Open Problems, Implications for Robin."
+        )
+
+    response = await call_llm_single(
+        llm_client,
+        [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=user_prompt),
+        ],
+    )
+    return cast(str, response.text)
+
+
+async def call_local_literature_agent(
+    queries: dict[str, str],
+    job_name: JobNames,
+    llm_client: LiteLLMModel | None = None,
+    max_results_per_search: int = 4,
+    max_evidence_items: int = 8,
+) -> dict[str, Any]:
+    mode = _local_agent_mode(job_name)
+    logger.info(
+        "Starting local %s literature agent for %s queries.", mode, len(queries)
+    )
+    all_results: list[dict[str, Any]] = []
+    headers = {"User-Agent": "robin-local-literature-agent/0.1"}
+
+    async with httpx.AsyncClient(timeout=60, headers=headers) as client:
+        for hypothesis, query in queries.items():
+            search_queries = _local_agent_search_queries(query)
+            terms = _local_agent_terms(" ".join([hypothesis, query]))
+            works_by_key: dict[str, dict[str, Any]] = {}
+
+            for search_query in search_queries:
+                try:
+                    for work in await _fetch_openalex_works(
+                        client, search_query, max_results_per_search
+                    ):
+                        key = _openalex_work_key(work)
+                        if key:
+                            works_by_key[key] = work
+                except httpx.HTTPStatusError as err:
+                    logger.warning(
+                        "Local literature agent search failed for query %r: %s",
+                        search_query,
+                        err.response.text[:300],
+                    )
+
+            relevant_works = [
+                work for work in works_by_key.values()
+                if _openalex_work_is_relevant(work, terms)
+            ]
+            ranked_works = sorted(
+                relevant_works,
+                key=lambda work: _score_openalex_work(work, terms),
+                reverse=True,
+            )[:max_evidence_items]
+            evidence_text, sources_text = _format_openalex_evidence(ranked_works)
+            answer = await _local_agent_summarize(
+                query, mode, evidence_text, sources_text, llm_client
+            )
+
+            all_results.append(
+                {
+                    "hypothesis": hypothesis,
+                    "query": query,
+                    "answer": answer,
+                    "sources": sources_text,
+                    "context": f"Query: {query}\nAnswer: {answer}",
+                    "status": "success",
+                    "task_run_id": f"local-{mode}-agent",
+                }
+            )
+
+    return {"results": all_results, "count": len(all_results), "has_errors": False}
+
+
+async def call_literature_platform(
+    queries: dict[str, str],
+    fh_client: EdisonClient,
+    job_name: JobNames,
+    llm_client: LiteLLMModel | None = None,
+) -> dict[str, Any]:
+    backend = os.getenv("ROBIN_LITERATURE_BACKEND", "edison").lower()
+    if backend == "pubmed":
+        return await call_pubmed_platform(queries)
+    if backend in {"semantic_scholar", "semanticscholar", "s2"}:
+        return await call_semantic_scholar_platform(queries)
+    if backend == "openalex":
+        return await call_openalex_platform(queries)
+    if backend in {"local_agent", "local", "paperqa_local"}:
+        return await call_local_literature_agent(queries, job_name, llm_client)
+    if backend != "edison":
+        raise ValueError(
+            "Unsupported ROBIN_LITERATURE_BACKEND value "
+            f"{backend!r}. Use 'edison', 'pubmed', 'semantic_scholar', 'openalex', or 'local_agent'."
+        )
+    return await call_platform(queries, fh_client, job_name)
+
+
 async def call_platform(  # noqa: PLR0912
     queries: dict[str, str], fh_client: EdisonClient, job_name: JobNames
 ) -> dict[str, Any]:
@@ -92,6 +772,14 @@ async def call_platform(  # noqa: PLR0912
 
             task_id_to_context[task_run_id] = {"hypothesis": hypothesis, "query": q}
             submitted_ids.append(task_run_id)
+        except httpx.HTTPStatusError as err:
+            if err.response.status_code == 402:
+                raise RuntimeError(
+                    "Edison task submission failed because the Edison API returned "
+                    "402 Payment Required. Check your Edison account credits, billing, "
+                    "or project access before rerunning this workflow."
+                ) from err
+            logger.exception(f"Failed to submit task for query '{q}'")
         except Exception:
             logger.exception(f"Failed to submit task for query '{q}'")
 
@@ -320,7 +1008,8 @@ def save_falcon_files(
 
         content = f"Proposal for {hypothesis_text}\n\n"
         content += f"{formatted_output_text}\n\n"
-        content += f"Full trajectory link: https://platform.edisonscientific.com/trajectories/{task_id_text}\n"
+        if task_id_text:
+            content += f"Source task id: {task_id_text}\n"
 
         try:
             filepath.write_text(content, encoding="utf-8")
@@ -621,7 +1310,7 @@ async def process_comparison_pair(
             Message(role="user", content=user_prompt),
         ]
 
-        response = await client.call_single(messages)
+        response = await call_llm_single(client, messages)
 
         response_content = cast(str, response.text)
 
@@ -847,7 +1536,7 @@ async def format_single_report(
         Message(role="user", content=final_report_formatting_user_message),
     ]
 
-    final_report_formatted_result = await client.call_single(formatting_messages)
+    final_report_formatted_result = await call_llm_single(client, formatting_messages)
 
     return {
         "hypothesis": hypothesis_text,
@@ -892,14 +1581,26 @@ def extract_candidate_info_from_folder(folder_path: str) -> pd.DataFrame:
                     content = f.read()
 
                 candidate_match = re.search(
-                    r"Proposal for(.*?)\s*Overview", content, re.DOTALL | re.IGNORECASE
+                    r"Proposal for\s*(.*?)(?:\s*Overview|\n\s*\n)",
+                    content,
+                    re.DOTALL | re.IGNORECASE,
                 )
                 candidate_text = (
                     candidate_match.group(1).strip() if candidate_match else None
                 )
                 if candidate_text is None:
+                    # 情報工学用の短いレポートではOverview見出しがない場合がある。
+                    first_line_match = re.search(
+                        r"^Proposal for\s*(.+)$", content, re.MULTILINE
+                    )
+                    candidate_text = (
+                        first_line_match.group(1).strip()
+                        if first_line_match
+                        else None
+                    )
+                if candidate_text is None:
                     logger.error(
-                        "  - Could not find text between 'Proposal for' and 'Overview'"
+                        "  - Could not find candidate name after 'Proposal for'"
                         f" in {filename}"
                     )
 

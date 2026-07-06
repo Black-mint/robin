@@ -1,0 +1,167 @@
+hypothesis,answer,index,strength_score
+Topology-Semantic Ablation (TSA) Framework for Modular RAG,"Proposal for Topology-Semantic Ablation (TSA) Framework for Modular RAG
+
+### Evaluation Report: Topology-Semantic Ablation (TSA) Framework for Modular RAG
+
+#### Overview of Research Candidate
+The proposed ""Topology-Semantic Ablation (TSA) Framework"" aims to deconstruct the performance drivers of GraphRAG within software engineering contexts. By employing a modular RAG architecture, the researcher intends to isolate and toggle two primary information channels: **topological context** (graph-based structural dependencies, such as call graphs or AST-derived relationships) and **semantic context** (vector-based similarity retrieved from embeddings). The framework is designed to quantitatively determine the conditions—specifically the trade-off between legacy maintenance and greenfield development—under which structural graph data surpasses semantic similarity in efficacy.
+
+#### Prior Work and Context
+Current RAG research for software engineering has shifted toward ""Modular RAG,"" a paradigm that separates retrieval, augmentation, and generation components to allow for granular optimization (Gao et al., 2023). While GraphRAG is gaining traction by incorporating structural relations (Ji et al., 2021), existing literature suggests a gap in identifying *why* these systems succeed. Studies indicate that RAG robustness is not innate but evolves during operation (Barnett et al., 2024), and current benchmarks (e.g., Lyu et al., 2024; Chen et al., 2024; Xiong et al., 2024) primarily evaluate overall performance rather than the isolated contribution of specific retrieval modalities. This proposal bridges the gap between hybrid GNN approaches for code summarization (Liu et al., 2020) and the need for formal validation of information channels identified in recent failure analysis reports (Barnett et al., 2024).
+
+#### Technical Hypothesis
+The hypothesis posits that the utility of structural (topological) versus semantic (vector) data is task-dependent. In legacy refactoring, where deep dependency chains and side-effect propagation are critical, topological context should theoretically yield higher performance than semantic retrieval, which may suffer from ""noisy"" code snippets that appear similar but behave differently. Conversely, greenfield tasks may rely more on semantic retrieval for library usage. The TSA framework tests this by formalizing a ""tipping point,"" moving RAG evaluation from black-box benchmarking to mechanistic analysis of information utility.
+
+#### Evaluation Plan
+*   **Datasets:** To properly assess code-specific performance, the candidate should utilize large-scale open-source datasets (e.g., the 95k+ function C-project corpus (Liu et al., 2020)) or extend the CRUD-RAG benchmark (Lyu et al., 2024) to include structural metadata.
+*   **Baselines:**
+    *   **Naive RAG:** Standard semantic retrieval without structural augmentation.
+    *   **Vanilla GraphRAG:** Combined structural and semantic retrieval.
+    *   **GNN-augmented models:** Utilizing approaches like the Hybrid GNN mentioned in prior art (Liu et al., 2020) as a point of comparison.
+*   **Metrics:** Beyond standard generation metrics (BLEU, ROUGE, METEOR (Liu et al., 2020)), the evaluation must track retrieval precision regarding dependency-heavy queries and ""negative rejection"" (Chen et al., 2024)—the ability of the model to ignore irrelevant but semantically similar code.
+*   **Ablation Studies:** The ""LEGO-like"" modular toggling is the core of this plan:
+    1.  Only Semantic Retrieval.
+    2.  Only Structural Retrieval.
+    3.  Weighted Fusion (the control).
+
+#### Limitations and Risks
+*   **Data Construction Complexity:** Building a reliable topological index (e.g., call graphs) is computationally expensive and error-prone compared to vector indexing. The feasibility of maintaining up-to-date graphs for ""Update"" (CRUD) scenarios is a significant risk (Lyu et al., 2024).
+*   **Lost-in-the-Middle Effect:** Research (Xiong et al., 2024) has demonstrated that LLMs suffer from ""lost-in-the-middle"" issues. The TSA framework must account for whether performance degradation is due to the lack of a specific information modality or simply the model’s inability to process the interleaved context provided by the modular retriever.
+*   **Scope Creep:** The ""tipping point"" hypothesis is elegant but potentially difficult to generalize across different programming languages (e.g., dynamic vs. static typing), which may change the utility of topological structures significantly.
+
+#### Overall Evaluation
+**Strengths:** The proposal is highly novel and addresses a critical research gap: the ""black box"" nature of current RAG architectures. By focusing on ablation, it aligns with modern requirements for interpretability in software engineering tooling. It is grounded in the existing move toward modular RAG (Gao et al., 2023) and provides a clear mechanism for empirical validation.
+
+**Weaknesses:** The proposal underestimates the technical challenge of integrating high-fidelity graph structures into a standard RAG pipeline, particularly regarding the latency of graph traversals versus vector lookups.
+
+**Verdict:** **Highly Feasible and Recommended.** This research direction provides a concrete path to move the field from *system-building* to *system-understanding*. It successfully synthesizes lessons from diverse fields (Alzubaidi et al., 2021; Barnett et al., 2024; Gao et al., 2023; Liu et al., 2020) into a testable, systematic framework. The primary focus for the candidate should be ensuring the reproducibility of the graph construction process to maintain scientific integrity.
+
+### References
+
+Alzubaidi, L., Zhang, J., Humaidi, A. J., Al-Dujaili, A. Q., & Duan, Y. (2021). Review of deep learning: concepts, CNN architectures, challenges, applications, future directions. *Journal of Big Data*, *8*(1). https://doi.org/10.1186/s40537-021-00444-8
+
+Barnett, S., Kurniawan, S., Thudumu, S., Brannelly, Z., & Abdelrazek, M. (2024). Seven failure points when engineering a retrieval augmented generation system. *Proceedings of the 46th International Conference on Software Engineering*, 1–12. https://doi.org/10.1145/3644815.3644945
+
+Chen, J., Lin, H., Han, X., & Sun, L. (2024). Benchmarking large language models in retrieval-augmented generation. *Proceedings of the AAAI Conference on Artificial Intelligence*, *38*(16), 17875–17883. https://doi.org/10.1609/aaai.v38i16.29728
+
+Gao, Y., Xiong, Y., Gao, X., Jia, K., & Pan, J. (2023). Retrieval-augmented generation for large language models: A survey. *arXiv*. https://doi.org/10.48550/arxiv.2312.10997
+
+Ji, S., Pan, S., Cambria, E., Marttinen, P., & Yu, P. S. (2021). A survey on knowledge graphs: Representation, acquisition, and applications. *IEEE Transactions on Neural Networks and Learning Systems*, *33*(2), 494–514. https://doi.org/10.1109/tnnls.2021.3070843
+
+Liu, S., Chen, Y., Xie, X., Siow, J. K., & Liu, Y. (2020). Retrieval-augmented generation for code summarization via hybrid GNN. *arXiv*. https://doi.org/10.48550/arxiv.2006.05405
+
+Lyu, Y., Li, Z., Niu, S., Xiong, F., & Tang, B. (2024). CRUD-RAG: A comprehensive Chinese benchmark for retrieval-augmented generation of large language models. *ACM Transactions on Information Systems*, *43*(1), 1–28. https://doi.org/10.1145/3701228
+
+Xiong, G., Jin, Q., Lu, Z., & Zhang, A. (2024). Benchmarking retrieval-augmented generation for medicine. *Findings of the Association for Computational Linguistics: ACL 2024*, 468–481. https://doi.org/10.18653/v1/2024.findings-acl.372
+
+",1,1.2049689594121709
+Topological Context Pruning (TCP) for Multi-Repo RAG,"Proposal for Topological Context Pruning (TCP) for Multi-Repo RAG
+
+### Evaluation Report: Topological Context Pruning (TCP) for Multi-Repo RAG
+
+#### Overview of Research Candidate
+The proposed research, **Topological Context Pruning (TCP)**, aims to shift multi-repository Retrieval Augmented Generation (RAG) from purely vector-similarity-based retrieval to structural, graph-traversal-based retrieval. The core objective is to reduce ""context noise"" and improve API integration accuracy by prioritizing code segments that are structurally relevant (e.g., direct dependents, definitions) within a global dependency graph of the codebase. This approach positions the multi-repository environment as a graph to be traversed, rather than a document set to be scanned.
+
+#### Prior Work and Context
+Current RAG frameworks, categorized into Naive, Advanced, and Modular paradigms (Gao et al., 2023), primarily rely on semantic search, which often fails in software engineering tasks due to the linguistic gap between code and natural language, as well as the ""lost in the middle"" phenomenon (Chen et al., 2024; Xiong et al., 2024). Existing research has explored hybrid retrieval methods for code (Liu et al., 2020), utilizing Graph Neural Networks (GNNs) to capture local and global structural information. The candidate’s reliance on the ""world-side compilation"" theory (Lewis et al., 2026) is a modern extension of previous architectural proposals, suggesting that system-level performance should be optimized by refining the ""surrounding world"" (the context) rather than solely relying on model-weight updates.
+
+#### Technical Hypothesis
+The hypothesis rests on the premise that structural connectivity (n-hop traversal) acts as a more reliable filter for ""necessary"" context than high-dimensional vector embeddings. By pruning the context window using the codebase’s underlying call/dependency graph, the system intends to:
+1.  **Reduce Noise:** Remove irrelevant semantically-similar code that lacks functional relevance.
+2.  **Mitigate ""Lost in the Middle"":** By providing structurally ""adjacent"" nodes, the LLM is presented with a high-signal, low-entropy context, theoretically improving its ability to perform accurate API integration.
+3.  **Constraint-Based Accuracy:** Leveraging the explicit dependency graph acts as a form of ""authority scope"" enforcement, limiting the search space to valid logical paths (Lewis et al., 2026).
+
+#### Evaluation Plan
+*   **Datasets:** Given the need for multi-repo structural data, evaluation should utilize open-source datasets featuring complex cross-repository dependencies (e.g., large-scale C or Java projects (Liu et al., 2020)).
+*   **Baselines:**
+    *   **Naive RAG:** Dense vector-only retrieval (e.g., Ada/Cohere embeddings).
+    *   **Hybrid RAG:** Standard retrieval incorporating BM25 keyword matching.
+    *   **Graph-Naive RAG:** A baseline using simple GNN-based re-ranking without path-based pruning.
+*   **Metrics:** Beyond standard retrieval metrics (Recall@K, MRR), evaluation must include RAG-specific diagnostics: **Noise Robustness, Negative Rejection, and Information Integration** (as defined in the RGB benchmark (Chen et al., 2024)).
+*   **Ablations:** Compare $n=1$ (direct neighbor) vs. $n=k$ (multi-hop) traversal to identify the ""pruning threshold"" where noise outweighs structural signal.
+
+#### Limitations and Risks
+*   **Graph Complexity:** Large-scale multi-repo environments often have ""heavy"" nodes (e.g., utility libraries) that lead to graph saturation. A simple n-hop traversal may result in a context window explosion unless combined with secondary heuristic pruning.
+*   **Operational Validation:** As noted by Barnett et al. (2024), RAG robustness is not ""designed in"" but evolves through operation. The static nature of a dependency graph may not account for dynamic, runtime-injected dependencies or polymorphic calls common in modern software, potentially leading to incomplete context retrieval.
+*   **Tooling Dependency:** Feasibility is predicated on the availability of accurate, high-fidelity AST-to-graph parsers. If the parser fails to capture cross-language or dynamic dependencies, the graph traversal will be fundamentally flawed.
+
+#### Overall Evaluation
+**Strengths:** The candidate demonstrates strong theoretical grounding by moving away from ""flat"" retrieval, which is a known bottleneck in software engineering RAG (Barnett et al., 2024; Chen et al., 2024). The integration of graph-theoretic approaches with world-side compilation theory (Lewis et al., 2026) provides a sophisticated, actionable framework for context selection.
+
+**Weaknesses:** The proposal lacks a specific strategy for resolving graph ambiguities (e.g., dynamic dispatch). Furthermore, it assumes that structural distance correlates perfectly with information need, which may not hold for complex architectural patterns where non-adjacent files are logically critical.
+
+**Recommendation:** The research is highly feasible and addresses a critical research gap. It is recommended to proceed, provided the project includes a rigorous baseline comparison against state-of-the-art hybrid (semantic + structural) retrievers and accounts for the ""dynamic dependency"" limitation during the graph construction phase.
+
+References:
+
+Alzubaidi, L., Zhang, J., Humaidi, A. J., Al-Dujaili, A. Q., & Duan, Y. (2021). Review of deep learning: concepts, CNN architectures, challenges, applications, future directions. *Journal of Big Data*, *8*(1), 1-74. https://doi.org/10.1186/s40537-021-00444-8
+
+Barnett, S., Kurniawan, S., Thudumu, S., Brannelly, Z., & Abdelrazek, M. (2024). Seven failure points when engineering a retrieval augmented generation system. https://doi.org/10.1145/3644815.3644945
+
+Chen, J., Lin, H., Han, X., & Sun, L. (2024). Benchmarking large language models in retrieval-augmented generation. *Proceedings of the AAAI Conference on Artificial Intelligence*, *38*(16), 17754–17762. https://doi.org/10.1609/aaai.v38i16.29728
+
+Gao, Y., Xiong, Y., Gao, X., Jia, K., & Pan, J. (2023). Retrieval-augmented generation for large language models: A survey. arXiv. https://doi.org/10.48550/arxiv.2312.10997
+
+Lewis, P., Perez, E., Piktus, A., Petroni, F., & Karpukhin, V. (2026). Affordance-compiled intelligence: Observable-only cognitive impedance matching for no-meta LLM-integrated systems. arXiv. https://doi.org/10.5281/zenodo.18717227
+
+Liu, S., Chen, Y., Xie, X., Siow, J. K., & Liu, Y. (2020). Retrieval-augmented generation for code summarization via hybrid GNN. arXiv. https://doi.org/10.48550/arxiv.2006.05405
+
+Lyu, Y., Li, Z., Niu, S., Xiong, F., & Tang, B. (2024). CRUD-RAG: A comprehensive Chinese benchmark for retrieval-augmented generation of large language models. *ACM Transactions on Information Systems*. https://doi.org/10.1145/3701228
+
+Xiong, G., Jin, Q., Lu, Z., & Zhang, A. (2024). Benchmarking retrieval-augmented generation for medicine. *Findings of the Association for Computational Linguistics*. https://doi.org/10.18653/v1/2024.findings-acl.372
+
+",0,0.15536396369721783
+Semantic Entropy-Based Hallucination Detection (SEHD) for API Usage,"Proposal for Semantic Entropy-Based Hallucination Detection (SEHD) for API Usage
+
+### Research Evaluation Report: Semantic Entropy-Based Hallucination Detection (SEHD) for API Usage
+
+#### Overview of Research Candidate
+The proposed research, **Semantic Entropy-Based Hallucination Detection (SEHD)**, aims to address the critical failure point of hallucinated API calls in RAG-assisted code generation. By leveraging semantic entropy across multiple stochastic decoding paths, the method seeks to quantify model uncertainty when generating API-related code sequences. When a generated API call exhibits high entropy, it acts as a trigger for an agentic ""tester"" role to initiate re-retrieval or verification against the target repository’s dependency schema.
+
+#### Prior Work and Context
+Current RAG frameworks for software engineering predominantly rely on semantic search to populate context, yet they frequently suffer from ""failure points"" (Barnett et al., 2024) where LLMs generate plausible but technically incorrect API calls. Existing literature identifies three RAG paradigms (Naive, Advanced, and Modular) (Gao et al., 2023), but current evaluation benchmarks (e.g., Pass@k) struggle to distinguish between superficial code accuracy and deep, repository-specific dependency correctness. This proposal builds upon the concept of ""self-collaboration"" (Dong et al., 2024), which utilizes specialized roles (analyst, coder, tester) to improve generation quality, and integrates the ""semantic entropy"" concept (Chen et al., 2024)—originally used for broader hallucination detection—into the domain-specific challenge of software dependency verification.
+
+#### Technical Hypothesis
+The core hypothesis is that non-existent or misaligned API calls produce high variance in token-level probability distributions across multiple stochastic decoding paths because the model lacks sufficient ground-truth grounding for the hallucination. The mechanism relies on the assumption that if a model is ""unsure"" about an API’s signature or existence within a provided codebase, its sampling behavior will fluctuate significantly compared to generating established, well-documented APIs. This creates a quantifiable signal for an agentic loop (Dong et al., 2024) to identify and mitigate hallucinations in real-time, effectively moving from static evaluation to operational validation (Barnett et al., 2024).
+
+#### Evaluation Plan
+*   **Datasets:** Evaluation should move beyond standard benchmarks and utilize repository-level datasets that enforce strict dependency constraints (e.g., datasets mirroring the complexity of the ""self-collaboration"" framework (Dong et al., 2024) or the ""CRUD-RAG"" scenarios (Lyu et al., 2024)).
+*   **Baselines:** Performance should be compared against:
+    1.  Standard RAG without verification.
+    2.  Self-Collaboration frameworks (Dong et al., 2024) without entropy-based triggers.
+    3.  Static analysis-based verification (e.g., linting or compiler feedback).
+*   **Metrics:** Use ""Negative Rejection"" rates (Chen et al., 2024) specifically focused on API-invocations, latency impact of the stochastic sampling, and F1-score of the ""tester"" role in correctly identifying true vs. false API hallucinations.
+*   **Reproducibility:** Implementation must ensure the stochastic decoding seed control is transparent. The ""tester"" role logic must be versioned to ensure it can be benchmarked against static analysis tools.
+
+#### Limitations and Risks
+*   **Computational Overhead:** Stochastic decoding requires multiple forward passes per code chunk, which introduces significant latency—a common challenge in practical RAG deployment (Gao et al., 2023).
+*   **Dependency Schema Inference:** The proposal assumes an accurate ""inferred dependency schema"" is available. If the RAG retrieval component fails to fetch the relevant dependency documentation, the entropy-based detection may provide false negatives.
+*   **The ""Lost-in-the-Middle"" Effect:** Large-scale code repositories often exceed context windows. As noted in (Xiong et al., 2024), RAG performance suffers when context is improperly managed, which could cause entropy spikes that are unrelated to hallucinations but rather to context saturation.
+
+#### Overall Evaluation
+**Strengths:** The proposal is highly novel in applying semantic entropy to the granular, structural constraints of API usage. It addresses a recognized gap in software engineering RAG systems—the inability to validate code beyond surface-level syntax.
+**Weaknesses:** The proposal heavily relies on the assumption that semantic entropy correlates with structural API invalidity. It does not explicitly account for the overhead-to-accuracy trade-off.
+**Feasibility:** Highly feasible as an add-on to existing agentic RAG architectures.
+**Impact:** High. If effective, this could drastically reduce the ""debugging loop"" in RAG-assisted development, providing a move towards the ""self-healing"" code generation requested in modern software engineering research (Barnett et al., 2024; Dong et al., 2024).
+
+**Recommendation:** Proceed with a focus on benchmarking against static analysis tools to determine if the entropy-based signal provides better coverage than simple compilation or type-checking errors.
+
+### References
+
+Alzubaidi, L., Zhang, J., Humaidi, A. J., Al-Dujaili, A. Q., & Duan, Y. (2021). Review of deep learning: concepts, CNN architectures, challenges, applications, future directions. *Journal of Big Data, 8*(1), 1–74. https://doi.org/10.1186/s40537-021-00444-8
+
+Barnett, S., Kurniawan, S., Thudumu, S., Brannelly, Z., & Abdelrazek, M. (2024). Seven failure points when engineering a retrieval augmented generation system. *Proceedings of the 46th International Conference on Software Engineering: Software Engineering in Practice*, 1–10. https://doi.org/10.1145/3644815.3644945
+
+Chen, J., Lin, H., Han, X., & Sun, L. (2024). Benchmarking large language models in retrieval-augmented generation. *Proceedings of the AAAI Conference on Artificial Intelligence, 38*(16), 17855–17863. https://doi.org/10.1609/aaai.v38i16.29728
+
+Dong, Y., Jiang, X., Jin, Z., & Li, G. (2024). Self-collaboration code generation via ChatGPT. *ACM Transactions on Software Engineering and Methodology, 33*(4), 1–28. https://doi.org/10.1145/3672459
+
+Gao, Y., Xiong, Y., Gao, X., Jia, K., & Pan, J. (2023). Retrieval-augmented generation for large language models: A survey. *arXiv preprint arXiv:2312.10997*. https://doi.org/10.48550/arxiv.2312.10997
+
+Liu, S., Chen, Y., Xie, X., Siow, J. K., & Liu, Y. (2020). Retrieval-augmented generation for code summarization via hybrid GNN. *arXiv preprint arXiv:2006.05405*. https://doi.org/10.48550/arxiv.2006.05405
+
+Lyu, Y., Li, Z., Niu, S., Xiong, F., & Tang, B. (2024). CRUD-RAG: A comprehensive Chinese benchmark for retrieval-augmented generation of large language models. *ACM Transactions on Information Systems, 43*(1), 1–29. https://doi.org/10.1145/3701228
+
+Xiong, G., Jin, Q., Lu, Z., & Zhang, A. (2024). Benchmarking retrieval-augmented generation for medicine. *Findings of the Association for Computational Linguistics: ACL 2024*, 1–15. https://doi.org/10.18653/v1/2024.findings-acl.372
+
+",2,-1.3603329231093888

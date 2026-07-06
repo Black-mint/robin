@@ -1,0 +1,44 @@
+Query: How can we design a reproducible benchmark framework for Retrieval-Augmented Generation (RAG) in software engineering that quantitatively evaluates the trade-offs between context relevance, code synthesis accuracy, and hallucination rates in multi-file repository environments, while accounting for varying levels of library dependency complexity and developer intent?
+
+### Candidate Evaluation Report: Reproducible RAG Benchmark for Software Engineering
+
+#### 1. Overview of Research Candidate
+The proposed research aims to construct a reproducible benchmarking framework for Retrieval-Augmented Generation (RAG) within software engineering. It seeks to quantify the complex interplay between context relevance, code synthesis accuracy, and hallucination rates in multi-file environments. A critical feature of this proposal is its intent to account for external variables such as library dependency complexity and developer intent.
+
+#### 2. Prior Work and Context
+Current RAG research has reached a state of maturity in specific domains, particularly medicine (e.g., MIRAGE, MedRAG), where systematic evaluation frameworks are already identifying scaling properties and "lost-in-the-middle" effects [7]. In software engineering, while models like CodeT5+ have advanced code generation [8] and "self-collaboration" frameworks have demonstrated significant improvements (29.9–47.1% Pass@1) in complex task management [2], RAG-specific evaluation remains fragmented. 
+
+Evidence suggests a broader shift in the field away from simple parametric-only baselines toward modular, policy-driven RAG systems that utilize uncertainty-triggered loops and hybrid retrieval [6]. Crucially, existing benchmarks often suffer from being "overlap-heavy" (relying on EM/F1 scores), failing to address the structural realities of multi-file software repositories.
+
+#### 3. Technical Hypothesis
+The proposal implicitly aligns with the **Cognitive Impedance Matching Theory (CIMT)** [3]. By treating system-level capability as a "world-side compilation problem" rather than just model-weight improvement, the candidate assumes that a benchmark can successfully isolate operational capability through observable metrics (validators, repair paths, and auditable receipts). The hypothesis is that modularizing the evaluation of retrieval noise, domain-specific dependency complexity, and hallucination will allow for a "conservative certification" of RAG performance in software engineering.
+
+#### 4. Evaluation Plan
+To move beyond current prototyping, the evaluation framework must adopt the following multi-dimensional approach derived from the provided evidence:
+*   **Metric Diversity:** Incorporate retrieval diagnostics (Recall@k, MRR@k) alongside generation accuracy metrics (Pass@k) and hallucination detection protocols [1, 6].
+*   **Structural Modeling:** Implement "virtual teams" (analyst, coder, tester roles) to simulate realistic multi-file repository workflows [2].
+*   **System-Level Provenance:** Utilize auditable receipts and evidence dependency graphs [3] to track how specific library dependencies influence the synthesis output.
+*   **Policy-Driven Testing:** Evaluate the system under varying "validity budgets" and "repair paths" to determine how the agent handles context-heavy, multi-file software tasks [3].
+
+#### 5. Limitations and Risks
+*   **Metric Homogeneity:** Standard overlap-based metrics (F1/EM) are insufficient for complex software tasks [6]. The framework risks falling into the same trap unless it prioritizes functional correctness over text matching.
+*   **Domain/Distribution Shift:** Software repositories are highly heterogeneous. A framework that works for one dependency structure may fail due to "domain shift" when applied to different languages or proprietary libraries [5, 6].
+*   **Evaluation Fallibility:** As noted in CIMT, benchmark judges (including LLMs) are inherently fallible. Over-reliance on "LLM-as-judge" protocols without human-in-the-loop validation may lead to biased performance assessments [3].
+*   **Cost/Latency Trade-offs:** The candidate must ensure the benchmark itself is not computationally prohibitive, as modular, multi-agent RAG pipelines already face significant generation latency [5, 6].
+
+#### 6. Overall Evaluation
+The proposal is timely and scientifically sound, grounded in the current transition from "naïve" RAG to "modular, policy-driven" systems. By emphasizing **reproducibility** and **multi-file complexity**, the candidate addresses the most significant gaps in current software engineering RAG benchmarks. 
+
+**Recommendation:** The project is highly viable, provided it avoids the common pitfall of relying on simplistic overlap metrics. It should focus heavily on the "auditable receipt" concept found in recent CIMT literature [3] to ensure that developer intent is mapped accurately to retrieved code segments. The inclusion of software-development methodologies (as seen in [2]) will be the differentiator between a generic RAG benchmark and a specialized software engineering tool.
+
+Full trajectory link: https://platform.edisonscientific.com/trajectories/local-falcon-agent
+
+References:
+[1] A Multitask, Multilingual, Multimodal Evaluation of ChatGPT on Reasoning, Hallucination, and Interactivity (arXiv (Cornell University), 2023) Authors: Yejin Bang, Samuel Cahyawijaya, Nayeon Lee, Wenliang Dai, Dan Su. Citations: 355. DOI: https://doi.org/10.48550/arxiv.2302.04023. URL: https://openalex.org/W4319793302
+[2] Self-Collaboration Code Generation via ChatGPT (ACM Transactions on Software Engineering and Methodology, 2024) Authors: Yihong Dong, Xue Jiang, Zhi Jin, Ge Li. Citations: 189. DOI: https://doi.org/10.1145/3672459. URL: https://openalex.org/W4399557965
+[3] Affordance-Compiled Intelligence: Observable-Only Cognitive Impedance Matching for No-Meta LLM-Integrated Systems (arXiv (Cornell University), 2026) Authors: Patrick Lewis, Ethan Perez, Aleksandara Piktus, Fabio Petroni, Vladimir Karpukhin. Citations: 3012. DOI: https://doi.org/10.5281/zenodo.18717227. URL: https://openalex.org/W3027879771
+[4] MedRAG: Enhancing Retrieval-augmented Generation with Knowledge Graph-Elicited Reasoning for Healthcare Copilot (Unknown venue, 2025) Authors: Xuejiao Zhao, Siyan Liu, Su-Yin Yang, Chunyan Miao. Citations: 78. DOI: https://doi.org/10.1145/3696410.3714782. URL: https://openalex.org/W4409657176
+[5] Retrieval-Augmented Generation (RAG) in Healthcare: A Comprehensive Review (AI, 2025) Authors: Fnu Neha, Deepshikha Bhati, Deepak Kumar Shukla. Citations: 43. DOI: https://doi.org/10.3390/ai6090226. URL: https://openalex.org/W4414128336
+[6] A Systematic Literature Review of Retrieval-Augmented Generation: Techniques, Metrics, and Challenges (Big Data and Cognitive Computing, 2025) Authors: Andrew Brown, Muhammad Roman, Barry Devereux. Citations: 15. DOI: https://doi.org/10.3390/bdcc9120320. URL: https://openalex.org/W7114889968
+[7] Benchmarking Retrieval-Augmented Generation for Medicine (Unknown venue, 2024) Authors: Guangzhi Xiong, Qiao Jin, Zhiyong Lu, Aidong Zhang. Citations: 220. DOI: https://doi.org/10.18653/v1/2024.findings-acl.372. URL: https://openalex.org/W4402670290
+[8] CodeT5+: Open Code Large Language Models for Code Understanding and Generation (Unknown venue, 2023) Authors: Yue Wang, Hung Lê, Akhilesh Deepak Gotmare, Nghi Bui, Junnan Li. Citations: 350. DOI: https://doi.org/10.18653/v1/2023.emnlp-main.68. URL: https://openalex.org/W4389519352

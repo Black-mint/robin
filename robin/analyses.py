@@ -6,7 +6,7 @@ from aviary.core import Message
 
 from .configuration import RobinConfiguration
 from .multitrajectory_runner import Step, StepConfig
-from .utils import read_and_process_csv
+from .utils import call_llm_single, read_and_process_csv
 
 logger = logging.getLogger(__name__)
 
@@ -141,8 +141,9 @@ async def data_analysis(
         Message(role="user", content=data_interpretation_content_message),
     ]
 
-    data_interpretation_result = await configuration.llm_client.call_single(
-        data_interpretation_messages
+    data_interpretation_result = await call_llm_single(
+        configuration.llm_client,
+        data_interpretation_messages,
     )
 
     data_interpretation_result_text = cast(str, data_interpretation_result.text)
@@ -183,7 +184,9 @@ async def data_analysis(
         Message(role="user", content=followup_content_message),
     ]
 
-    followup_result = await configuration.llm_client.call_single(followup_messages)
+    followup_result = await call_llm_single(
+        configuration.llm_client, followup_messages
+    )
 
     followup_suggestions = cast(str, followup_result.text)
 

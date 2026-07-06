@@ -1,0 +1,12 @@
+Assay Candidate 1:
+Strategy: Tandem Reporter Autophagic Flux Assay
+Reasoning: Lysosomal dysfunction is a cornerstone of dry AMD, leading to the accumulation of lipofuscin and toxic aggregates. By using a GFP-mCherry-LC3 tandem reporter, this assay provides real-time, high-content imaging of autophagic flux. The shift from yellow (autophagosome) to red-only (autolysosome) puncta allows for the direct quantification of lysosomal degradation efficiency, addressing the critical need to distinguish between increased autophagosome formation and a block in terminal clearance (valapala2014lysosomalmediatedwasteclearance, rao2018compromisedphagosomematuration).
+
+Assay Candidate 2:
+Strategy: Kinetic Photoreceptor Outer Segment (POS) Phagocytosis Challenge
+Reasoning: RPE cells maintain photoreceptor health through the daily phagocytosis of POS. This process is frequently impaired in AMD due to metabolic stress. An optimized assay using FITC-labeled POS, combined with a trypan blue quenching step, enables high-throughput kinetic measurements of both particle binding and internalization. Normalizing these results to F-actin morphometric signatures allows for an indirect, non-destructive assessment of the RPE's functional competence in a physiological context, providing a sensitive screen for therapeutic interventions (mao2013analysisofphotoreceptor, muller2018quantifiedfactinmorphology).
+
+Assay Candidate 3:
+Strategy: Multiplex Secretome Profiling of Inflammatory Mediators
+Reasoning: Chronic RPE inflammation is driven by the NLRP3 inflammasome and complement dysregulation, resulting in the secretion of pro-inflammatory cytokines like IL-1β and IL-8. Using a multiplex Luminex bead-based assay to profile the conditioned media of stressed hiPSC-RPE monolayers provides a quantitative and high-throughput readout of the inflammatory response. This strategy directly measures the functional consequences of RPE-Bruch's membrane stress and allows for the evaluation of compounds that stabilize the RPE secretory phenotype (huang2026stingactivationinduces, trakkides2019oxidativestressincreases).
+

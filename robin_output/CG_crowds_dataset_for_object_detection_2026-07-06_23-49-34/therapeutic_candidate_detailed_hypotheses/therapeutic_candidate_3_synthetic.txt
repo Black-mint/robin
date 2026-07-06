@@ -1,0 +1,50 @@
+Proposal for Synthetic Artifact Synthesis (SAS) Benchmark
+
+### Evaluation Report: Synthetic Artifact Synthesis (SAS) Benchmark
+
+#### **Overview of Research Candidate**
+The Synthetic Artifact Synthesis (SAS) benchmark is a proposed methodology to isolate and quantify the impact of specific computer graphics (CG) rendering artifacts—specifically lighting, texture, and geometry—on the performance of object detection models. By employing a "Style-Transfer-In-The-Loop" approach, the candidate seeks to decompose the synthetic-to-real domain gap into interpretable causal factors. The study focuses on crowd detection, leveraging the CrowdHuman dataset to determine how sensitive state-of-the-art (SOTA) detectors are to rendering discrepancies, such as hard-edge shadows, which may induce "disproportionate detection failure."
+
+#### **Prior Work and Context**
+The proposal positions itself against "black box" benchmarking methods currently prevalent in synthetic data research. While existing literature acknowledges the importance of benchmark selection for reproducibility and rigorous assessment—as demonstrated in the CAMI initiative (Sczyrba et al., 2017) and the evolution of benchmarking methodologies for software systems (Blackburn et al., 2006)—current synthetic-to-real transfer research is often treated as a monolithic problem. The proposed SAS framework mirrors the logic seen in systematic review protocols (Liberati et al., 2009) and sensor-driven performance analysis (Fu et al., 2020), attempting to move from monolithic validation to a granular, component-based understanding of why synthetic data fails.
+
+#### **Technical Hypothesis**
+The candidate posits that detection failure is not a global lack of data fidelity but is causally linked to specific, controllable rendering artifacts. By isolating these parameters (e.g., lighting intensity/shadow hardness), the researcher expects to reveal that current detectors are hypersensitive to specific CG-native visual signals. This mechanism is intended to transform the synthetic data pipeline from a trial-and-error generative process into a controlled, explainable engineering pipeline, effectively providing a diagnostic tool for model robustness.
+
+#### **Evaluation Plan**
+*   **Datasets:** CrowdHuman as the primary testbed; synthetic equivalents generated under varying rendering parameters.
+*   **Baselines:** Standard SOTA object detectors (e.g., YOLO, Faster R-CNN, or HR.Net architectures mentioned in Alzubaidi et al., 2021).
+*   **Metrics:** Must move beyond simple Average Precision (AP). The proposal should integrate multi-dimensional metrics to quantify sensitivity, potentially drawing from 3D segmentation evaluation frameworks (Taha & Hanbury, 2015) to ensure that performance drops are statistically correlated with specific artifact injection levels.
+*   **Ablations:** Systematic variation of lighting/texture/geometry parameters to generate sensitivity curves.
+*   **Reproducibility:** A critical requirement for this benchmark is defining the "Style-Transfer-In-The-Loop" parameter space clearly, similar to the importance of parameter transparency noted in (Sczyrba et al., 2017).
+
+#### **Limitations and Risks**
+*   **The "Complexity of Attribution" Gap:** As noted in (Frisoni et al., 2021), extracting events and relations from complex systems is fraught with challenges. Attributing a detection failure *solely* to a "hard-edge shadow" may be reductive; failure might actually be a compounded result of the interaction between shadows and object scale, which the proposed methodology might struggle to decouple.
+*   **Generalization vs. Specificity:** A benchmark focused heavily on CG-specific artifacts in the CrowdHuman dataset risks overfitting to the peculiar visual biases of that specific CG engine or scene configuration, potentially failing to generalize to real-world deployment scenarios.
+*   **Resource Intensity:** Like the comprehensive benchmarking of metagenome interpretation (Sczyrba et al., 2017), the computational cost of generating a large-scale, parameter-swept synthetic dataset may be prohibitively high, potentially limiting adoption.
+
+#### **Overall Evaluation**
+**Strengths:** The candidate demonstrates strong conceptual merit by shifting from "black box" evaluation to a "causal/diagnostic" approach. This addresses a significant gap in the current literature, which often lacks the interpretability required for systematic improvements in computer vision.
+
+**Weaknesses:** The proposal remains high-level regarding the specific implementation of the "Style-Transfer-In-The-Loop" mechanism. There is a risk that the "Complexity of Attribution" (Frisoni et al., 2021) will impede the ability to definitively isolate these variables, leading to ambiguous results.
+
+**Feasibility/Impact:** Highly feasible if the researcher narrows the scope of "artifacts" to a small, tractable set. The potential impact is significant: if successful, SAS could become a standard diagnostic suite for researchers to "stress test" detectors against synthetic biases before deployment. However, to ensure rigor, the proposal must strictly define its taxonomy of artifacts and adopt robust statistical metrics for failure attribution, ensuring the work is reproducible and not just anecdotal.
+
+### References
+
+Alzubaidi, L., Zhang, J., Humaidi, A. J., Al-Dujaili, A. Q., & Duan, Y. (2021). Review of deep learning: Concepts, CNN architectures, challenges, applications, future directions. *Journal of Big Data*, *8*(1), Article 53. https://doi.org/10.1186/s40537-021-00444-8
+
+Blackburn, S. M., Garner, R., Hoffmann, C., Khang, A. M., & McKinley, K. S. (2006). The DaCapo benchmarks. *Proceedings of the 21st Annual ACM SIGPLAN Conference on Object-Oriented Programming Systems, Languages, and Applications*, 169–190. https://doi.org/10.1145/1167473.1167488
+
+Frisoni, G., Moro, G., & Carbonaro, A. (2021). A survey on event extraction for natural language understanding: Riding the biomedical literature wave. *IEEE Access*, *9*, 161046–161065. https://doi.org/10.1109/access.2021.3130956
+
+Fu, B., Damer, N., Kirchbuchner, F., & Kuijper, A. (2020). Sensing technology for human activity recognition: A comprehensive survey. *IEEE Access*, *8*, 87094–87114. https://doi.org/10.1109/access.2020.2991891
+
+Liberati, A., Altman, D. G., Tetzlaff, J., Mulrow, C. D., & Gøtzsche, P. C. (2009). The PRISMA statement for reporting systematic reviews and meta-analyses of studies that evaluate health care interventions: Explanation and elaboration. *PLoS Medicine*, *6*(7), Article e1000100. https://doi.org/10.1371/journal.pmed.1000100
+
+Sczyrba, A., Hofmann, P., Belmann, P., Koslicki, D., & Janssen, S. (2017). Critical assessment of metagenome interpretation—a benchmark of metagenomics software. *Nature Methods*, *14*(11), 1063–1071. https://doi.org/10.1038/nmeth.4458
+
+Taha, A. A., & Hanbury, A. (2015). Metrics for evaluating 3D medical image segmentation: Analysis, selection, and tool. *BMC Medical Imaging*, *15*, Article 29. https://doi.org/10.1186/s12880-015-0068-x
+
+Xu, T. (2024). Recent advances in Rapidly-exploring random tree: A review. *Heliyon*, *10*(13), Article e32451. https://doi.org/10.1016/j.heliyon.2024.e32451
+

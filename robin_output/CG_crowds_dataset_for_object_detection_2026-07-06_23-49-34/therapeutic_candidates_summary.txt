@@ -1,0 +1,25 @@
+Therapeutic Candidate 1:
+Candidate: Disentangled Adversarial Feature Alignment (DAFA)
+Hypothesis: By explicitly enforcing a disentanglement constraint that separates synthetic rendering artifacts (e.g., lighting, texture) from structural crowd features (e.g., body contours, spatial density) in the latent space, the detector will achieve lower Log-Average Miss Rate (LAMR) in real-world scenarios compared to standard DANN.
+Reasoning: Standard adversarial alignment often forces a global feature distribution match, which can lead to "style" overfitting where the model maps real-world noise to synthetic artifacts. Inspired by Query 7 and the risk of over-fitting to synthetic noise [3], this method uses an auxiliary decoder to reconstruct image patches; if the reconstruction relies on artifacts, the adversarial loss is penalised. This ensures that the domain-invariant features are semantically grounded in pedestrian structure, improving transferability to the CityPersons dataset.
+
+Therapeutic Candidate 2:
+Candidate: Multi-Scale Crowd-Density-Aware Gradient Reversal
+Hypothesis: Integrating density-map prediction as an auxiliary task in a multi-scale DANN framework will mitigate precision decay in high-occlusion regions by forcing the feature backbone to maintain spatial resolution for small objects during domain adaptation.
+Reasoning: Crowd detection failure modes (Query 9) are often concentrated in dense clusters where feature maps lose spatial fidelity due to global domain alignment. By adding a regression head that predicts ground-truth crowd density—which can be generated precisely in synthetic environments (GTA-V/CARLA)—we force the network to preserve granular spatial information across scales. This bridges the gap where traditional global alignment sacrifices small-object detection performance in favor of background alignment.
+
+Therapeutic Candidate 3:
+Candidate: Synthetic Artifact Synthesis (SAS) Benchmark
+Hypothesis: A standardized benchmark using a "Style-Transfer-In-The-Loop" approach will reveal that current detectors are sensitive to specific rendering artifacts (e.g., shadow hard-edges in CG) which, when injected into real-world data, cause disproportionate detection failure.
+Reasoning: Currently, synthetic-to-real transfer is studied as a monolithic problem. This benchmark proposes isolating rendering parameters (lighting, texture, geometry) in CG crowds and quantifying their individual contribution to detection performance using the CrowdHuman dataset. This addresses the "Complexity of Attribution" risk [1, 2] and provides a causal understanding of why synthetic data fails, moving beyond the current "black box" benchmarking methods.
+
+Therapeutic Candidate 4:
+Candidate: Latency-Constrained Domain Generalization (LCDG)
+Hypothesis: Incorporating a "deployment-aware constraint" during the training of domain-aligned backbones (e.g., pruning-in-the-loop or knowledge distillation) can reduce the inference latency by 30% without sacrificing LAMR performance on real-world crowd scenes.
+Reasoning: As noted in Query 10, there is a fundamental trade-off between the depth required for feature alignment and the speed required for real-time surveillance. Most domain-aligned models are computationally heavy. By employing teacher-student distillation where the "teacher" is a fully-aligned high-capacity model and the "student" is a lightweight, deployment-ready architecture, we can preserve domain-invariant features in a smaller footprint, addressing the feasibility constraint in real-time deployment.
+
+Therapeutic Candidate 5:
+Candidate: Contrastive Learning of Crowded Semantic Invariants
+Hypothesis: Using a contrastive loss that treats occluded individuals as "positive" pairs across synthetic and real domains will improve recall in high-density regions compared to standard discriminative alignment.
+Reasoning: Adversarial alignment (DANN) often struggles with the long-tail distribution of crowded scenes where the "background" is visually dominant. Contrastive learning (e.g., SupCon) allows the model to cluster pedestrian features in the embedding space regardless of their domain. By focusing specifically on instances of occlusion—a key failure mode for CG-transferred models—the system learns to recognize the "occlusion signature" of a person, which is often lost in generic feature alignment.
+

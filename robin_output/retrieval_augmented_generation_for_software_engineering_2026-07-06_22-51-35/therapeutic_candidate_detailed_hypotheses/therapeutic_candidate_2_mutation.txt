@@ -1,0 +1,7 @@
+Proposal for Mutation-Based Adversarial Benchmarking (MBAB) for Dependency Resolution
+
+No OpenAlex results were found for this query.
+
+References:
+
+Full trajectory link: https://platform.edisonscientific.com/trajectories/

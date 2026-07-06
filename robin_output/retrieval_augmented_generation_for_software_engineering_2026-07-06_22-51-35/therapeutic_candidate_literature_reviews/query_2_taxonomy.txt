@@ -1,0 +1,8 @@
+Query: "Taxonomy of hallucination patterns in LLM-based automated code review: a systematic literature review on structural consistency and dependency resolution failures in large-scale repositories."
+
+No OpenAlex results were found for this query.
+
+Full trajectory link: https://platform.edisonscientific.com/trajectories/openalex-local
+
+References:
+

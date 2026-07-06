@@ -1,0 +1,12 @@
+Assay Candidate 1:
+Strategy: High-Content Phenotypic Screening
+Reasoning: High-content screening (HCS) using automated microscopy allows for the simultaneous quantification of multiple cellular parameters—such as nuclear morphology, organelle integrity, and cytoskeletal reorganization—providing a multidimensional readout of drug efficacy. By leveraging disease-relevant primary cells (e.g., patient-derived fibroblasts or iPSC-derived cells), HCS bridges the gap between target engagement and functional phenotype, allowing for the rapid identification of compounds that normalize disease-specific cellular signatures as documented in Nature Reviews Drug Discovery.
+
+Assay Candidate 2:
+Strategy: Metabolic Flux Profiling
+Reasoning: Many disease states are characterized by profound metabolic reprogramming, detectable via real-time analysis of the Extracellular Acidification Rate (ECAR) and Oxygen Consumption Rate (OCR) using instruments like the Seahorse XF analyzer. Measuring mitochondrial respiration and glycolytic capacity provides a direct functional readout of cellular health and stress responses. This strategy is highly relevant as metabolic plasticity is a common vulnerability in chronic and degenerative pathologies, enabling the identification of metabolic stabilizers or inhibitors that restore homeostatic bioenergetics.
+
+Assay Candidate 3:
+Strategy: Reporter-Based Signaling Pathway Assay
+Reasoning: Targeting dysregulated signaling nodes requires precise quantitative measurements of pathway activity. By engineering cell lines with sensitive, stable genetic reporter constructs—such as dual-luciferase or fluorescent proteins driven by pathway-specific promoters (e.g., NF-kB, Wnt, or SMAD)—one can assess real-time transcriptional modulation. This approach offers high signal-to-noise ratios, rapid turnaround, and robust suitability for high-throughput screening of libraries to identify potent modulators of specific pathogenic signaling cascades.
+

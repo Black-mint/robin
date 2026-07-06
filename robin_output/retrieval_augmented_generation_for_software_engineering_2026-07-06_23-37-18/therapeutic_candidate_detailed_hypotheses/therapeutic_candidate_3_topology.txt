@@ -1,0 +1,55 @@
+Proposal for Topology-Semantic Ablation (TSA) Framework for Modular RAG
+
+### Evaluation Report: Topology-Semantic Ablation (TSA) Framework for Modular RAG
+
+#### Overview of Research Candidate
+The proposed "Topology-Semantic Ablation (TSA) Framework" aims to deconstruct the performance drivers of GraphRAG within software engineering contexts. By employing a modular RAG architecture, the researcher intends to isolate and toggle two primary information channels: **topological context** (graph-based structural dependencies, such as call graphs or AST-derived relationships) and **semantic context** (vector-based similarity retrieved from embeddings). The framework is designed to quantitatively determine the conditions—specifically the trade-off between legacy maintenance and greenfield development—under which structural graph data surpasses semantic similarity in efficacy.
+
+#### Prior Work and Context
+Current RAG research for software engineering has shifted toward "Modular RAG," a paradigm that separates retrieval, augmentation, and generation components to allow for granular optimization (Gao et al., 2023). While GraphRAG is gaining traction by incorporating structural relations (Ji et al., 2021), existing literature suggests a gap in identifying *why* these systems succeed. Studies indicate that RAG robustness is not innate but evolves during operation (Barnett et al., 2024), and current benchmarks (e.g., Lyu et al., 2024; Chen et al., 2024; Xiong et al., 2024) primarily evaluate overall performance rather than the isolated contribution of specific retrieval modalities. This proposal bridges the gap between hybrid GNN approaches for code summarization (Liu et al., 2020) and the need for formal validation of information channels identified in recent failure analysis reports (Barnett et al., 2024).
+
+#### Technical Hypothesis
+The hypothesis posits that the utility of structural (topological) versus semantic (vector) data is task-dependent. In legacy refactoring, where deep dependency chains and side-effect propagation are critical, topological context should theoretically yield higher performance than semantic retrieval, which may suffer from "noisy" code snippets that appear similar but behave differently. Conversely, greenfield tasks may rely more on semantic retrieval for library usage. The TSA framework tests this by formalizing a "tipping point," moving RAG evaluation from black-box benchmarking to mechanistic analysis of information utility.
+
+#### Evaluation Plan
+*   **Datasets:** To properly assess code-specific performance, the candidate should utilize large-scale open-source datasets (e.g., the 95k+ function C-project corpus (Liu et al., 2020)) or extend the CRUD-RAG benchmark (Lyu et al., 2024) to include structural metadata.
+*   **Baselines:**
+    *   **Naive RAG:** Standard semantic retrieval without structural augmentation.
+    *   **Vanilla GraphRAG:** Combined structural and semantic retrieval.
+    *   **GNN-augmented models:** Utilizing approaches like the Hybrid GNN mentioned in prior art (Liu et al., 2020) as a point of comparison.
+*   **Metrics:** Beyond standard generation metrics (BLEU, ROUGE, METEOR (Liu et al., 2020)), the evaluation must track retrieval precision regarding dependency-heavy queries and "negative rejection" (Chen et al., 2024)—the ability of the model to ignore irrelevant but semantically similar code.
+*   **Ablation Studies:** The "LEGO-like" modular toggling is the core of this plan:
+    1.  Only Semantic Retrieval.
+    2.  Only Structural Retrieval.
+    3.  Weighted Fusion (the control).
+
+#### Limitations and Risks
+*   **Data Construction Complexity:** Building a reliable topological index (e.g., call graphs) is computationally expensive and error-prone compared to vector indexing. The feasibility of maintaining up-to-date graphs for "Update" (CRUD) scenarios is a significant risk (Lyu et al., 2024).
+*   **Lost-in-the-Middle Effect:** Research (Xiong et al., 2024) has demonstrated that LLMs suffer from "lost-in-the-middle" issues. The TSA framework must account for whether performance degradation is due to the lack of a specific information modality or simply the model’s inability to process the interleaved context provided by the modular retriever.
+*   **Scope Creep:** The "tipping point" hypothesis is elegant but potentially difficult to generalize across different programming languages (e.g., dynamic vs. static typing), which may change the utility of topological structures significantly.
+
+#### Overall Evaluation
+**Strengths:** The proposal is highly novel and addresses a critical research gap: the "black box" nature of current RAG architectures. By focusing on ablation, it aligns with modern requirements for interpretability in software engineering tooling. It is grounded in the existing move toward modular RAG (Gao et al., 2023) and provides a clear mechanism for empirical validation.
+
+**Weaknesses:** The proposal underestimates the technical challenge of integrating high-fidelity graph structures into a standard RAG pipeline, particularly regarding the latency of graph traversals versus vector lookups.
+
+**Verdict:** **Highly Feasible and Recommended.** This research direction provides a concrete path to move the field from *system-building* to *system-understanding*. It successfully synthesizes lessons from diverse fields (Alzubaidi et al., 2021; Barnett et al., 2024; Gao et al., 2023; Liu et al., 2020) into a testable, systematic framework. The primary focus for the candidate should be ensuring the reproducibility of the graph construction process to maintain scientific integrity.
+
+### References
+
+Alzubaidi, L., Zhang, J., Humaidi, A. J., Al-Dujaili, A. Q., & Duan, Y. (2021). Review of deep learning: concepts, CNN architectures, challenges, applications, future directions. *Journal of Big Data*, *8*(1). https://doi.org/10.1186/s40537-021-00444-8
+
+Barnett, S., Kurniawan, S., Thudumu, S., Brannelly, Z., & Abdelrazek, M. (2024). Seven failure points when engineering a retrieval augmented generation system. *Proceedings of the 46th International Conference on Software Engineering*, 1–12. https://doi.org/10.1145/3644815.3644945
+
+Chen, J., Lin, H., Han, X., & Sun, L. (2024). Benchmarking large language models in retrieval-augmented generation. *Proceedings of the AAAI Conference on Artificial Intelligence*, *38*(16), 17875–17883. https://doi.org/10.1609/aaai.v38i16.29728
+
+Gao, Y., Xiong, Y., Gao, X., Jia, K., & Pan, J. (2023). Retrieval-augmented generation for large language models: A survey. *arXiv*. https://doi.org/10.48550/arxiv.2312.10997
+
+Ji, S., Pan, S., Cambria, E., Marttinen, P., & Yu, P. S. (2021). A survey on knowledge graphs: Representation, acquisition, and applications. *IEEE Transactions on Neural Networks and Learning Systems*, *33*(2), 494–514. https://doi.org/10.1109/tnnls.2021.3070843
+
+Liu, S., Chen, Y., Xie, X., Siow, J. K., & Liu, Y. (2020). Retrieval-augmented generation for code summarization via hybrid GNN. *arXiv*. https://doi.org/10.48550/arxiv.2006.05405
+
+Lyu, Y., Li, Z., Niu, S., Xiong, F., & Tang, B. (2024). CRUD-RAG: A comprehensive Chinese benchmark for retrieval-augmented generation of large language models. *ACM Transactions on Information Systems*, *43*(1), 1–28. https://doi.org/10.1145/3701228
+
+Xiong, G., Jin, Q., Lu, Z., & Zhang, A. (2024). Benchmarking retrieval-augmented generation for medicine. *Findings of the Association for Computational Linguistics: ACL 2024*, 468–481. https://doi.org/10.18653/v1/2024.findings-acl.372
+
