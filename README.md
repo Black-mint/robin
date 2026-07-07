@@ -64,7 +64,12 @@ For a fully self-contained environment that avoids OS-level dependency conflicts
     source .robin_env/bin/activate
     ```
 
-3.  **Install Dependencies:**
+    When you can't use uv command:
+     ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+4.  **Install Dependencies:**
     The project uses `pyproject.toml` for dependency management. Install the base package and development dependencies (which include Jupyter):
 
     ```bash
@@ -77,7 +82,7 @@ For a fully self-contained environment that avoids OS-level dependency conflicts
     pip install -e '.[dev]'
     ```
 
-4.  **Set API Keys:**
+5.  **Set API Keys:**
     Copy the provided template and fill in your keys:
     ```bash
     cp .env.example .env
